@@ -1,0 +1,13 @@
+{
+  "name": "academy-app",
+  "version": "1.0.0",
+  "description": "학원 관리 시스템",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "install": "cd backend && npm install",
+    "build": "echo 'No build step needed'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
