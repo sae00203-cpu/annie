@@ -2,3 +2,5 @@ node_modules/
 .env
 *.log
 .DS_Store
+# 학생 데이터 · 백업 · 비밀번호는 절대 깃허브에 올리지 않아요
+data/
