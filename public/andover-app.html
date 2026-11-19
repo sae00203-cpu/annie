@@ -581,6 +581,39 @@ h2{font-size:20px}
   .clsrow{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);padding-right:24px}
 }
 @media print{.tabs{display:none!important}}
+
+/* Student Record: 검색 · 넘겨보기 · 요약 칸 */
+.srsearch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.srsearch input{flex:1;min-width:0;font-size:16px;padding:12px 14px 12px 40px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface2) no-repeat 13px center/18px 18px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23657089' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E")}
+.srsearch input:focus{border-color:var(--accent);background-color:var(--surface);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.srtot{flex:0 0 auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+#srRes:empty{display:none}
+#srRes{margin-bottom:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:6px;box-shadow:var(--shadow)}
+.srcnt,.srnone{margin:4px 8px 6px;font-size:12.5px;color:var(--muted)}
+.srlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px;max-height:360px;overflow-y:auto}
+.srit{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;text-align:left;border:0;background:transparent;border-radius:9px;padding:9px 10px;min-width:0}
+.srit:hover,.srit:focus-visible{background:var(--accent-soft)}
+.srit:first-child{background:var(--surface2)}
+.srit b{font-size:15.5px}
+.srit .en{color:var(--muted);font-size:13px}
+.srit .cl{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px}
+.srit .sg{flex-basis:100%;font-size:12px;color:var(--muted)}
+.srbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
+.srcls{font-weight:700;font-size:14px}
+.srnav{display:inline-flex;align-items:center;gap:6px}
+.srpos{font-size:13px;color:var(--muted);min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+.srchips .cg small{font-weight:400;margin-left:5px;opacity:.75}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);display:grid;gap:2px;min-width:0}
+.kpi small{font-size:12px;color:var(--muted);line-height:1.3}
+.kpi b{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi.good b{color:var(--ok)}
+.kpi.mid{background:var(--warn-soft);border-color:var(--warn)}.kpi.mid b{color:var(--warn)}
+.kpi.low{background:var(--bad-soft);border-color:var(--bad)}.kpi.low b{color:var(--bad)}
+.kpi.none b{color:var(--ink)}
+@media print{.srsearch,#srRes,.srbar{display:none!important}}
 </style>
 
 <div class="app">
@@ -1260,13 +1293,58 @@ function srSummary(s,c,enr){
   if(aw.length)t+=' 대회·수상: '+aw.join(', ')+'.';
   return t;
 }
+/* ---------- 학생 검색 (전체 반 · 초성) ---------- */
+S.srQ='';
+var CHO='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+function choOf(t){var o='';for(var i=0;i<t.length;i++){var c=t.charCodeAt(i)-0xAC00;o+=(c>=0&&c<11172)?CHO[Math.floor(c/588)]:t[i]}return o}
+function srNorm(t){return String(t||'').toLowerCase().replace(/\s+/g,'')}
+function srFind(q){
+  q=srNorm(q);if(!q)return [];
+  var choOnly=/^[ㄱ-ㅎ]+$/.test(q),out=[];
+  S.students.forEach(function(s){
+    if(s.status==='left')return;
+    var c=S.classes.find(function(x){return x.id===s.classId});if(!c)return;
+    var nm0=srNorm(s.name),en=srNorm(s.ename),sg=srNorm(s.sg),cn=srNorm(c.name),sc=0;
+    if(choOnly){var ch=choOf(nm0);if(ch.indexOf(q)===0)sc=3;else if(ch.indexOf(q)>=0)sc=2}
+    else if(nm0===q||en===q)sc=6;
+    else if(nm0.indexOf(q)===0||en.indexOf(q)===0)sc=5;
+    else if(nm0.indexOf(q)>=0||en.indexOf(q)>=0)sc=4;
+    else if(cn.indexOf(q)>=0)sc=2;
+    else if(sg.indexOf(q)>=0)sc=1;
+    if(sc)out.push({s:s,c:c,sc:sc});
+  });
+  out.sort(function(a,b){return b.sc-a.sc||a.s.name.localeCompare(b.s.name,'ko')});
+  return out;
+}
+function srResHTML(){
+  var q=S.srQ.trim();if(!q)return '';
+  var r=srFind(q);
+  if(!r.length)return '<p class="srnone">"'+esc(q)+'"에 맞는 학생이 없어요. 이름·영어 이름·학교·반 이름으로 찾아보세요.</p>';
+  return '<p class="srcnt">'+r.length+'명 찾음'+(r.length>1?' · Enter를 누르면 첫 번째 학생으로 가요':'')+'</p><div class="srlist">'+r.slice(0,40).map(function(x){
+    return '<button type="button" class="srit" data-srgo="'+esc(x.s.id)+'"><b>'+esc(x.s.name)+'</b>'+(x.s.ename?'<span class="en">'+esc(x.s.ename)+'</span>':'')
+      +'<span class="cl">'+esc(x.c.name)+'</span>'+(x.s.sg?'<span class="sg">'+esc(x.s.sg)+'</span>':'')+'</button>';
+  }).join('')+'</div>'+(r.length>40?'<p class="srcnt">앞의 40명만 보여요. 조금 더 자세히 입력해 주세요.</p>':'');
+}
+function srGo(id){
+  var st=S.students.find(function(x){return x.id===id});if(!st)return;
+  S.srQ='';var a=document.activeElement;if(a&&a.blur)a.blur();
+  S.tab='sr';S.cid=st.classId;S.srSel=st.id;renderAll();window.scrollTo(0,0);
+}
+function srKpi(label,v,unit,goodAt,okAt){
+  var st=v==null?'none':v>=goodAt?'good':v>=okAt?'mid':'low';
+  return '<div class="kpi '+st+'"><small>'+label+'</small><b>'+(v==null?'–':v+unit)+'</b></div>';
+}
 function renderSR(){
   var h=$('v-sr'),c=cls();
   if(!c){h.innerHTML='<div class="empty"><h2>반을 먼저 만들어 주세요</h2></div>';return}
   var list=roster(c);
   if(!S.srSel||!list.some(function(x){return x.id===S.srSel}))S.srSel=list.length?list[0].id:null;
   var s=list.find(function(x){return x.id===S.srSel});
-  var chips='<div class="srchips">'+list.map(function(x){return '<button type="button" class="cg'+(x.id===S.srSel?' on':'')+'" data-srs="'+esc(x.id)+'">'+esc(x.name)+'</button>'}).join('')+'</div>';
+  var total=S.students.filter(function(x){return x.status!=='left'}).length,ix=list.findIndex(function(x){return x.id===S.srSel});
+  var search='<div class="srsearch"><input type="search" id="srQ" class="tx" autocomplete="off" enterkeyhint="go" placeholder="이름·초성·영어 이름·학교·반" aria-label="학생 찾기" value="'+esc(S.srQ)+'"><span class="srtot">재원 '+total+'명</span></div><div id="srRes">'+srResHTML()+'</div>';
+  var chips=search+'<div class="srbar"><span class="srcls">'+esc(c.name)+' 반 · '+list.length+'명</span>'
+    +(list.length>1?'<span class="srnav"><button type="button" class="ghost sm" data-srnav="-1" aria-label="이전 학생">‹ 이전</button><span class="srpos">'+(ix+1)+' / '+list.length+'</span><button type="button" class="ghost sm" data-srnav="1" aria-label="다음 학생">다음 ›</button></span>':'')+'</div>'
+    +'<div class="srchips">'+list.map(function(x){return '<button type="button" class="cg'+(x.id===S.srSel?' on':'')+'" data-srs="'+esc(x.id)+'">'+esc(x.name)+(x.ename?'<small>'+esc(x.ename)+'</small>':'')+'</button>'}).join('')+'</div>';
   if(!s){h.innerHTML='<div class="pad">'+chips+'<p class="hint">이 반에는 학생이 없어요.</p></div>';return}
   var enr=s.enrolledAt||'',months=srMonths(s,enr),rows=[],pctH=[],pctW=[];
   months.forEach(function(ym){
@@ -1282,8 +1360,11 @@ function renderSR(){
   roundList().forEach(function(r){var d=exGet(r.id,s.id);if(!d)return;var tx=[exText(d),ivText(d)].filter(Boolean).join(' / ');if(tx)ev.push({d:r.date||'',k:'정기평가',t:r.name+(tx?' — '+tx:'')})});
   ev.sort(function(x,y){return (x.d||'')<(y.d||'')?-1:(x.d||'')>(y.d||'')?1:0});
   var o='<div class="pad sr">'+chips;
-  o+='<div class="vbox srhead"><div class="srt"><h2 style="margin:0">'+esc(s.name)+(s.ename?' <small>'+esc(s.ename)+'</small>':'')+'</h2><span class="chip">'+esc(c.name)+'</span></div>'
+  o+='<div class="vbox srhead"><div class="srt"><h2 style="margin:0">'+esc(s.name)+(s.ename?' <small>'+esc(s.ename)+'</small>':'')+'</h2><span class="chip">'+esc(c.name)+'</span>'+(s.sg?'<span class="chip">'+esc(s.sg)+'</span>':'')+(s.coaching===true?'<span class="chip ok">코칭</span>':'')+'</div>'
     +'<div class="srf"><label class="fl" for="srEnr">입학일</label><input type="date" id="srEnr" class="tx" value="'+esc(enr)+'" style="max-width:190px">'+(enr?'<span class="srd">재원 '+esc(srDur(enr))+'</span>':'<span class="hint">입학일을 넣으면 재원기간이 표시돼요</span>')+'</div></div>';
+  var P3=srPct(srStats(s,addDays(today(),-90),today()));
+  o+='<div class="kpis">'+srKpi('출석률 · 최근 3개월',P3.att,'%',95,85)+srKpi('숙제 이행률 · 최근 3개월',P3.hw,'%',90,75)+srKpi('단어시험 평균 · 최근 3개월',P3.word,'%',85,70)
+    +'<div class="kpi none"><small>재원 기간</small><b>'+(enr?esc(srDur(enr)):'–')+'</b></div></div>';
   o+='<h3 class="sechd">학습 흐름</h3>';
   o+='<div class="srcharts">'+srChart('숙제 이행률 (%)',pctH)+srChart('단어시험 평균 (%)',pctW)+'</div>';
   if(rows.length){
@@ -1305,6 +1386,8 @@ document.addEventListener('click',function(e){
   var g=t.closest('[data-godate]');if(g&&g.closest('#v-dash')){var p=g.dataset.godate.split('|');S.tab='today';S.cid=p[0];S.date=p[1];renderAll();return}
   var w=t.closest('[data-wgo]');if(w){var st=S.students.find(function(x){return x.id===w.dataset.wgo});if(st){S.tab='sr';S.cid=st.classId;S.srSel=st.id;renderAll();window.scrollTo(0,0)}return}
   if(!t.closest('#v-sr'))return;
+  var sg0=t.closest('[data-srgo]');if(sg0){srGo(sg0.dataset.srgo);return}
+  var sn0=t.closest('[data-srnav]');if(sn0){srStep(Number(sn0.dataset.srnav));return}
   var sb=t.closest('[data-srs]');if(sb){S.srSel=sb.dataset.srs;renderSR();return}
   var s=S.students.find(function(x){return x.id===S.srSel});if(!s)return;
   if(t.closest('#srHAdd')){var v=$('srHv').value.trim();if(!v){toast('내용을 적어 주세요');return}s.hist=(s.hist||[]).concat([{id:uid('h'),d:$('srHd').value||today(),t:$('srHt').value,v:v}]);saveStu(s);renderSR();return}
@@ -1313,6 +1396,32 @@ document.addEventListener('click',function(e){
   var ad=t.closest('[data-adel]');if(ad){if(!confirmStep('ad'+ad.dataset.adel,ad,'한 번 더 누르면 삭제'))return;s.awards=(s.awards||[]).filter(function(x){return x.id!==ad.dataset.adel});saveStu(s);renderSR();return}
   if(t.closest('#srCopy')){srCopy($('srSum').value);return}
   if(t.closest('#srPrint')){try{window.print()}catch(_){toast('이 화면에서는 인쇄할 수 없어요. 복사해서 사용해 주세요')}}
+});
+function srStep(d){
+  var c=cls();if(!c)return;var l=roster(c);if(l.length<2)return;
+  var i=l.findIndex(function(x){return x.id===S.srSel});S.srSel=l[(i+d+l.length)%l.length].id;renderSR();
+}
+document.addEventListener('input',function(e){
+  if(e.target.id!=='srQ')return;
+  S.srQ=e.target.value;var r=$('srRes');if(r)r.innerHTML=srResHTML();
+});
+document.addEventListener('keydown',function(e){
+  var t=e.target;
+  if(t.id==='srQ'){
+    if(e.key==='Enter'&&!e.isComposing){var f=document.querySelector('#srRes [data-srgo]');if(f){e.preventDefault();srGo(f.dataset.srgo)}return}
+    if(e.key==='Escape'){S.srQ='';t.value='';var r=$('srRes');if(r)r.innerHTML='';t.blur();return}
+    if(e.key==='ArrowDown'){var f2=document.querySelector('#srRes [data-srgo]');if(f2){e.preventDefault();f2.focus()}return}
+    return;
+  }
+  if(S.tab!=='sr'||e.ctrlKey||e.metaKey||e.altKey)return;
+  var tg=t&&t.tagName;
+  if(t.closest&&t.closest('.srit')&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
+    var L=Array.from(document.querySelectorAll('#srRes .srit')),i=L.indexOf(t),n=i+(e.key==='ArrowDown'?1:-1);
+    e.preventDefault();if(n<0){var q=$('srQ');if(q)q.focus()}else if(n<L.length)L[n].focus();return;
+  }
+  if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')return;
+  if(e.key==='/'){var q2=$('srQ');if(q2){e.preventDefault();q2.focus();q2.select()}return}
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();srStep(e.key==='ArrowLeft'?-1:1)}
 });
 document.addEventListener('change',function(e){
   var t=e.target;
