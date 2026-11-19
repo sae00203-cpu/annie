@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>생활기록 관리</title>
+<style>
+:root{--bg:#F4F6F5;--card:#fff;--ink:#1d2a24;--mute:#5d6b64;--line:#dfe5e2;--acc:#1F6B4F;--acc-ink:#fff;--warn:#C23A3A;--ok:#1F6B4F}
+@media (prefers-color-scheme:dark){:root{--bg:#141917;--card:#1d2420;--ink:#e6ece9;--mute:#9aa8a1;--line:#2f3a35;--acc:#3fa57c;--acc-ink:#0d1411;--warn:#f07b7b;--ok:#6fd0a6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 8px}
+p{margin:0 0 10px}
+.mute{color:var(--mute);font-size:13px}
+button,.btn{font:inherit;font-weight:600;border:0;border-radius:9px;padding:9px 14px;background:var(--acc);color:var(--acc-ink);cursor:pointer;text-decoration:none;display:inline-block}
+button.ghost,.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.danger{background:var(--warn);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+input[type=password]{font:inherit;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:min(260px,100%)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px}
+.msg{margin-top:10px;font-size:14px;white-space:pre-wrap;word-break:break-all}
+.msg.err{color:var(--warn)}.msg.ok{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:7px 4px;border-top:1px solid var(--line);vertical-align:middle}
+td:last-child{text-align:right;white-space:nowrap}
+ol{padding-left:20px;margin:0 0 10px}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+  <h1>생활기록 관리</h1>
+  <p class="sub"><a href="/">← 앱으로 돌아가기</a></p>
+
+  <section>
+    <h2>현재 데이터</h2>
+    <div id="counts" class="chips"><span class="chip">불러오는 중…</span></div>
+    <p class="mute" id="dir"></p>
+  </section>
+
+  <section>
+    <h2>구글 시트에서 가져오기</h2>
+    <ol class="mute">
+      <li>구글 드라이브에서 <b>앤도버 생활기록 데이터</b> 스프레드시트를 열어요.</li>
+      <li><b>파일 → 다운로드 → Microsoft Excel (.xlsx)</b> 를 눌러 받아요.</li>
+      <li>받은 파일을 아래에서 골라요. (<b>data</b> 시트를 자동으로 찾아요)</li>
+    </ol>
+    <div class="row">
+      <input type="file" id="file" accept=".xlsx,.xls,.csv">
+      <button id="importBtn" disabled>가져오기</button>
+    </div>
+    <div id="preview" class="chips"></div>
+    <p class="mute">가져오면 지금 데이터는 가져온 내용으로 <b>바뀌어요</b>. 바꾸기 전 데이터는 자동으로 백업돼요.</p>
+    <div id="importMsg" class="msg"></div>
+  </section>
+
+  <section>
+    <h2>백업</h2>
+    <p class="mute">하루 한 번 자동으로 백업하고, 최근 30개를 남겨요. 백업 파일은 USB나 다른 PC에도 따로 보관해 두세요.</p>
+    <div class="row" style="margin-bottom:10px">
+      <button id="backupBtn">지금 백업</button>
+      <a class="btn ghost" href="/admin/export">전체 데이터 내려받기</a>
+      <label class="btn ghost" style="font-weight:600">백업 파일로 복원<input type="file" id="restoreFile" accept=".json" hidden></label>
+    </div>
+    <table><tbody id="backups"></tbody></table>
+    <div id="backupMsg" class="msg"></div>
+  </section>
+
+  <section>
+    <h2>비밀번호</h2>
+    <p class="mute" id="pwState"></p>
+    <div class="row">
+      <input type="password" id="pw" placeholder="새 비밀번호 (비우면 해제)" autocomplete="new-password">
+      <button id="pwBtn">저장</button>
+    </div>
+    <div id="pwMsg" class="msg"></div>
+  </section>
+</main>
+
+<script src="/vendor/xlsx.full.min.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var NAMES = { students: '학생', classes: '반', settings: '설정', plans: '수업계획' };
+function chips(el, counts) {
+  var keys = Object.keys(counts);
+  el.innerHTML = keys.length ? '' : '<span class="chip">기록 없음</span>';
+  keys.sort().forEach(function (k) {
+    var s = document.createElement('span'); s.className = 'chip';
+    s.textContent = (NAMES[k] || k) + ' ' + counts[k]; el.appendChild(s);
+  });
+}
+function msg(el, text, ok) { el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+function post(url, body) {
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }); });
+}
+function fmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
+function label(name) {
+  if (name.indexOf('daily-') === 0) return '자동';
+  if (name.indexOf('manual-') === 0) return '수동';
+  if (name.indexOf('before-import-') === 0) return '가져오기 전';
+  if (name.indexOf('before-restore-') === 0) return '복원 전';
+  return '';
+}
+
+function load() {
+  fetch('/admin/status').then(function (r) { if (r.status === 401) location.href = '/login'; return r.json(); }).then(function (s) {
+    chips($('counts'), s.counts);
+    $('dir').textContent = '데이터 폴더: ' + s.dataDir;
+    $('pwState').textContent = s.hasPassword ? '비밀번호가 설정돼 있어요.' : '비밀번호가 없어요. 같은 와이파이에 있는 누구나 들어올 수 있어요.';
+    var tb = $('backups'); tb.innerHTML = '';
+    s.backups.forEach(function (b) {
+      var tr = document.createElement('tr');
+      var d = new Date(b.mtime);
+      tr.innerHTML = '<td></td><td class="mute"></td><td class="mute"></td><td></td>';
+      tr.children[0].textContent = d.toLocaleString('ko-KR');
+      tr.children[1].textContent = label(b.name);
+      tr.children[2].textContent = fmtSize(b.size);
+      var a = document.createElement('a'); a.href = '/admin/backup-file?name=' + encodeURIComponent(b.name); a.textContent = '받기';
+      var r = document.createElement('button'); r.className = 'ghost'; r.textContent = '복원'; r.style.marginLeft = '8px';
+      r.onclick = function () { restore({ name: b.name }, d.toLocaleString('ko-KR') + ' 백업'); };
+      tr.children[3].appendChild(a); tr.children[3].appendChild(r);
+      tb.appendChild(tr);
+    });
+  });
+}
+
+function restore(body, what) {
+  if (!confirm(what + '으로 되돌릴까요?\n지금 데이터는 복원 전에 자동으로 백업돼요.')) return;
+  post('/admin/restore', body).then(function () { msg($('backupMsg'), '복원했어요. 열려 있는 앱 화면은 새로고침해 주세요.', true); load(); },
+    function (e) { msg($('backupMsg'), '복원하지 못했어요: ' + e.message); });
+}
+
+/* ---- 가져오기 ---- */
+var rows = null;
+$('file').onchange = function () {
+  rows = null; $('importBtn').disabled = true; $('preview').innerHTML = ''; $('importMsg').textContent = '';
+  var f = this.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    try {
+      var wb = XLSX.read(new Uint8Array(rd.result), { type: 'array', raw: true });
+      var name = wb.SheetNames.find(function (n) { return n.trim().toLowerCase() === 'data'; }) || wb.SheetNames[0];
+      var all = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: '' });
+      rows = all.filter(function (r) { var k = String(r[0] || ''); return k.indexOf('|') > 0 && k.indexOf('key') !== 0; });
+      if (!rows.length) throw new Error('"' + name + '" 시트에서 기록을 찾지 못했어요. 앤도버 생활기록 데이터 파일이 맞는지 확인해 주세요.');
+      var counts = {};
+      rows.forEach(function (r) {
+        var del = r[3] === true || String(r[3]).toUpperCase() === 'TRUE'; if (del) return;
+        var c = String(r[0]).split('|')[0]; counts[c] = (counts[c] || 0) + 1;
+      });
+      chips($('preview'), counts);
+      msg($('importMsg'), '"' + name + '" 시트에서 위 기록을 찾았어요. 가져오기를 누르면 저장돼요.', true);
+      $('importBtn').disabled = false;
+    } catch (e) { msg($('importMsg'), '파일을 읽지 못했어요: ' + e.message); }
+  };
+  rd.readAsArrayBuffer(f);
+};
+$('importBtn').onclick = function () {
+  if (!rows) return;
+  if (!confirm('지금 데이터를 가져온 내용으로 바꿀까요?\n(바꾸기 전 데이터는 자동 백업돼요)')) return;
+  this.disabled = true;
+  post('/admin/import-rows', { rows: rows }).then(function (r) {
+    msg($('importMsg'), '가져왔어요! 열려 있는 앱 화면은 새로고침해 주세요.', true); load();
+  }, function (e) { msg($('importMsg'), '가져오지 못했어요: ' + e.message); $('importBtn').disabled = false; });
+};
+
+/* ---- 백업 ---- */
+$('backupBtn').onclick = function () {
+  post('/admin/backup').then(function (r) { msg($('backupMsg'), '백업했어요: ' + r.name, true); load(); },
+    function (e) { msg($('backupMsg'), '백업하지 못했어요: ' + e.message); });
+};
+$('restoreFile').onchange = function () {
+  var f = this.files[0]; if (!f) return; var input = this;
+  f.text().then(function (t) {
+    var s; try { s = JSON.parse(t); } catch (_) { return msg($('backupMsg'), 'JSON 백업 파일이 아니에요.'); }
+    restore({ store: s }, '"' + f.name + '" 파일');
+    input.value = '';
+  });
+};
+
+/* ---- 비밀번호 ---- */
+$('pwBtn').onclick = function () {
+  var v = $('pw').value;
+  if (!v && !confirm('비밀번호를 해제할까요? 같은 와이파이의 누구나 들어올 수 있게 돼요.')) return;
+  post('/admin/password', { password: v }).then(function (r) {
+    $('pw').value = ''; msg($('pwMsg'), r.hasPassword ? '저장했어요. 다른 PC·휴대폰에서는 이 비밀번호로 들어와요.' : '비밀번호를 해제했어요.', true); load();
+  }, function (e) { msg($('pwMsg'), '저장하지 못했어요: ' + e.message); });
+};
+
+load();
+</script>
+</body>
+</html>

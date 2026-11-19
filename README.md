@@ -1,77 +1,112 @@
-# 🌱 학원 관리 시스템
+# 🌱 앤도버 생활기록 — 단독 실행 버전
 
-학생 성적 관리 + 학부모 공유 링크 기능을 갖춘 웹 앱입니다.
+구글 Apps Script + 구글 시트로 돌아가던 **앤도버 생활기록**을
+**학원 PC 한 대에서 직접 돌아가는 프로그램**으로 옮긴 버전입니다.
 
----
-
-## Railway 배포 순서 (5단계)
-
-### 1단계 — GitHub 저장소 만들기
-1. github.com 접속 → 새 저장소(repository) 생성
-2. 이 폴더 전체를 업로드하거나 아래 명령어 실행:
-
-```bash
-git init
-git add .
-git commit -m "첫 배포"
-git remote add origin https://github.com/아이디/저장소명.git
-git push -u origin main
-```
-
-### 2단계 — Railway 프로젝트 생성
-1. railway.app 접속 → **New Project**
-2. **Deploy from GitHub repo** 선택
-3. 방금 만든 저장소 선택 → Deploy Now 클릭
-
-### 3단계 — PostgreSQL 데이터베이스 추가
-1. Railway 프로젝트 화면에서 **+ Add Service** 클릭
-2. **Database → PostgreSQL** 선택
-3. 자동으로 `DATABASE_URL` 환경변수가 앱에 연결됨 ✅
-
-### 4단계 — 환경변수 설정
-1. 앱 서비스 클릭 → **Variables** 탭
-2. 아래 변수 추가:
-   - `NODE_ENV` = `production`
-3. `DATABASE_URL`은 PostgreSQL 추가 시 자동 설정됨
-
-### 5단계 — 도메인 확인
-1. 앱 서비스 → **Settings** → **Networking**
-2. **Generate Domain** 클릭
-3. 발급된 URL로 접속하면 완료! 🎉
+- 화면과 기능은 구글 버전과 **똑같아요.** 같은 `andover-app.html` 파일을 고치지 않고 그대로 씁니다.
+- 구글 로그인, Apps Script 실행 시간 제한, 시트 용량 제한이 없어요.
+- 학원 와이파이에 연결된 다른 PC, 태블릿, 휴대폰에서도 브라우저로 들어와 함께 쓸 수 있어요. 몇 초 안에 서로 동기화됩니다.
+- 데이터는 이 PC의 `data` 폴더에 저장되고, 하루에 한 번 자동으로 백업됩니다.
+- 추가로 설치할 프로그램은 **Node.js 하나뿐**이에요.
 
 ---
 
-## 폴더 구조
+## 처음 설치하기
+
+### 1. Node.js 설치 (한 번만)
+[nodejs.org](https://nodejs.org/ko/download)에서 **LTS** 버전을 받아 설치합니다. 설치할 때는 계속 "다음"만 누르면 됩니다.
+
+### 2. 프로그램 받기
+GitHub 저장소 화면에서 **Code → Download ZIP**을 눌러 받습니다.
+받은 ZIP 파일을 원하는 폴더(예: `C:\앤도버생활기록`)에 압축을 풉니다.
+
+### 3. 실행
+| PC 종류 | 실행 방법 |
+|---|---|
+| Windows | `start-windows.bat` 더블클릭 |
+| Mac | `start-mac.command` 더블클릭 (처음에는 오른쪽 클릭 → 열기) |
+
+검은 창이 뜨면서 브라우저가 자동으로 열립니다.
+**검은 창을 닫으면 프로그램이 꺼집니다.** 쓰는 동안에는 창을 최소화해 두세요.
+
+### 4. 구글 시트 데이터 옮겨오기 (한 번만)
+1. 구글 드라이브에서 **앤도버 생활기록 데이터** 스프레드시트를 엽니다.
+2. **파일 → 다운로드 → Microsoft Excel (.xlsx)** 을 누릅니다.
+3. 브라우저에서 `http://localhost:8080/admin` 에 들어갑니다.
+4. **구글 시트에서 가져오기**에서 받은 파일을 고르고 **가져오기**를 누릅니다.
+
+> 엑셀 파일로 가져오기가 실패하면, 구글 시트에서 **data** 시트를 연 상태로
+> **파일 → 다운로드 → CSV** 로 받아서 같은 곳에 넣어 보세요.
+
+### 5. 비밀번호 설정 (권장)
+`/admin` 화면의 **비밀번호** 칸에서 설정합니다.
+비밀번호가 없으면 같은 와이파이에 연결된 사람 누구나 학생 기록을 볼 수 있어요.
+
+---
+
+## 다른 PC·휴대폰에서 접속하기
+
+프로그램을 켜면 검은 창에 아래처럼 주소가 나옵니다.
 
 ```
-academy-app/
-├── backend/
-│   ├── server.js         # 메인 서버
-│   ├── db.js             # DB 연결 및 테이블 초기화
-│   ├── routes/
-│   │   ├── students.js   # 학생 CRUD API
-│   │   ├── reports.js    # 성적표 API
-│   │   └── public.js     # 학부모 공개 링크 API
-│   └── package.json
-├── frontend/
-│   └── public/
-│       └── index.html    # 프론트엔드 (단일 파일)
-├── Procfile              # Railway 실행 명령
-└── .gitignore
+  이 PC에서:        http://localhost:8080
+  다른 PC·휴대폰:   http://192.168.0.15:8080   (같은 와이파이/공유기에서)
 ```
 
-## API 목록
+선생님들은 **같은 와이파이**에 연결한 다음, 두 번째 주소를 브라우저에 입력하면 됩니다.
+휴대폰에서는 "홈 화면에 추가"를 해 두면 앱처럼 쓸 수 있어요.
 
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| GET | /api/students | 전체 학생 목록 |
-| POST | /api/students | 학생 추가 |
-| PUT | /api/students/:id | 학생 수정 |
-| DELETE | /api/students/:id | 학생 삭제 |
-| POST | /api/reports | 성적표 저장 |
-| GET | /api/public/report/:token | 학부모 성적표 조회 |
+- 처음 켤 때 Windows 방화벽 창이 뜨면 **허용**을 눌러 주세요.
+- 프로그램을 켜 둔 PC의 주소가 바뀌지 않도록, 공유기에서 이 PC에 고정 IP를 주면 편합니다.
+- 프로그램을 켠 PC가 꺼져 있거나 절전 모드이면 다른 기기에서도 접속할 수 없어요.
 
-## 학부모 링크 구조
+---
 
-성적표 저장 시 고유 토큰이 생성됩니다.
-학부모는 `https://your-app.railway.app/view/토큰` 링크로 로그인 없이 성적표를 확인합니다.
+## 백업과 복원
+
+- 하루에 한 번 `data/backups/` 폴더에 자동으로 백업되고, 최근 30개가 보관됩니다.
+  PC가 새벽에 꺼져 있었다면 다음에 켤 때 바로 백업됩니다.
+- `/admin` 화면에서 **지금 백업**, **전체 데이터 내려받기**, **백업 파일로 복원**을 할 수 있어요.
+- 가져오기나 복원을 하기 직전에는 지금 데이터가 자동으로 백업됩니다. 실수해도 되돌릴 수 있어요.
+- **중요:** PC가 고장 나는 경우에 대비해, 가끔 **전체 데이터 내려받기**로 받은 파일을 USB나 구글 드라이브에도 보관해 두세요.
+
+## 다른 PC로 옮기기
+`data` 폴더째로 새 PC의 프로그램 폴더에 복사하면 됩니다. 데이터, 백업, 비밀번호가 모두 옮겨집니다.
+
+## 화면(앱) 업데이트하기
+새 버전의 `andover-app.html`이 생기면 `public/andover-app.html`에 덮어씌우고 브라우저를 새로고침하면 됩니다.
+구글 버전용으로 만든 파일을 그대로 넣어도 동작합니다.
+
+---
+
+## 구조 (개발자용)
+
+```
+server.js               서버 (Node.js 기본 기능만 사용, 설치할 패키지 없음)
+public/
+  andover-app.html      앱 화면 (구글 버전과 같은 파일)
+  standalone.js         google.script.run 을 이 서버로 연결하는 층
+  admin.html            관리 화면 (가져오기 · 백업 · 복원 · 비밀번호)
+  vendor/xlsx.full.min.js  엑셀 읽기 라이브러리 (SheetJS 0.18.5, Apache-2.0, 인터넷 없이 쓰려고 포함)
+start-windows.bat       Windows 실행
+start-mac.command       Mac 실행
+data/                   (자동 생성, Git에 올리지 않음)
+  store.json            모든 기록
+  config.json           포트 · 비밀번호
+  backups/              자동 · 수동 백업
+```
+
+### 구글 버전과의 대응
+
+| 구글 버전 | 단독 실행 버전 |
+|---|---|
+| `Code.gs` `api_ping` / `api_pull` / `api_write` | `server.js`의 `POST /api/api_ping` 등 (동작 동일) |
+| `google.script.run` | `public/standalone.js` |
+| 구글 시트 `data` 시트 (key · updatedAt · by · deleted · 내용) | `data/store.json` (같은 구조) |
+| `Backup.gs` (매일 새벽 3시, 30개 보관) | 하루 한 번 자동 백업, 30개 보관 |
+| 구글 계정 이메일 (`by`) | 앱에서 고른 선생님 이름 |
+
+### 설정 (`data/config.json`)
+- `port`: 접속 포트 (기본 8080). 환경변수 `PORT`로도 바꿀 수 있습니다.
+- `password`: 접속 비밀번호 (비어 있으면 비밀번호 없이 접속)
+- 환경변수 `DATA_DIR`: 데이터 폴더 위치, `NO_BROWSER=1`: 시작할 때 브라우저를 열지 않음

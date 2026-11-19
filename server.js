@@ -1,0 +1,413 @@
+#!/usr/bin/env node
+/**
+ * 앤도버 생활기록 — 단독 실행 서버
+ *
+ * 구글 Apps Script(Code.gs) + 구글 시트 대신, 이 PC에서 직접 돌아가는 서버예요.
+ *  - 화면: public/andover-app.html (구글 버전과 같은 파일을 그대로 씁니다)
+ *  - 데이터: data/store.json (한 파일에 전부 저장)
+ *  - 백업: data/backups/ 에 하루 한 번 자동 저장, 최근 30개 보관
+ *
+ * 추가 설치가 필요 없어요. Node.js 18 이상만 있으면 됩니다.
+ *   node server.js
+ */
+'use strict';
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+const { exec } = require('child_process');
+
+const ROOT = __dirname;
+const PUBLIC = path.join(ROOT, 'public');
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
+const STORE_FILE = path.join(DATA_DIR, 'store.json');
+const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+const APP_FILE = path.join(PUBLIC, 'andover-app.html');
+const BACKUP_KEEP = 30;
+const MAX_BODY = 50 * 1024 * 1024;       // 요청 하나 최대 50MB
+const MAX_DOC = 5 * 1024 * 1024;         // 문서 하나 최대 5MB (구글 버전은 27만 자)
+
+fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+/* ---------------- 설정 ---------------- */
+function loadConfig() {
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch (_) { /* 처음 실행 */ }
+  let changed = false;
+  if (typeof cfg.port !== 'number') { cfg.port = 8080; changed = true; }
+  if (typeof cfg.password !== 'string') { cfg.password = ''; changed = true; }
+  if (!cfg.secret) { cfg.secret = crypto.randomBytes(24).toString('hex'); changed = true; }
+  if (changed) writeJsonAtomic(CONFIG_FILE, cfg);
+  return cfg;
+}
+
+function writeJsonAtomic(file, obj) {
+  const tmp = file + '.tmp';
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeSync(fd, JSON.stringify(obj));
+    fs.fsyncSync(fd);
+  } finally { fs.closeSync(fd); }
+  fs.renameSync(tmp, file);
+}
+
+const config = loadConfig();
+const PORT = Number(process.env.PORT) || config.port;
+
+/* ---------------- 데이터 저장소 ----------------
+ * 구글 시트의 'data' 시트와 같은 구조예요.
+ *   key = "컬렉션|id",  t = updatedAt,  by = 수정한 사람,  del = 삭제 여부,  json = 내용
+ */
+let store = { last: 0, docs: {} };
+try {
+  store = JSON.parse(fs.readFileSync(STORE_FILE, 'utf8'));
+  if (!store.docs) store.docs = {};
+  store.last = Number(store.last) || 0;
+} catch (e) {
+  if (e.code !== 'ENOENT') {
+    console.error('\n[오류] data/store.json 을 읽지 못했어요: ' + e.message);
+    console.error('       data/backups 폴더의 백업 파일을 store.json 으로 복사하면 복구할 수 있어요.\n');
+    process.exit(1);
+  }
+  saveStore();
+}
+
+function saveStore() { writeJsonAtomic(STORE_FILE, store); }
+
+function nextTime() { return Math.max(store.last + 1, Date.now()); }
+
+/** since 이후에 바뀐 문서를 돌려줘요 (Code.gs 의 api_pull 과 같음) */
+function apiPull(since) {
+  since = Number(since) || 0;
+  let mx = since;
+  const out = [];
+  for (const key of Object.keys(store.docs)) {
+    const d = store.docs[key];
+    if (d.t > since) {
+      const p = key.indexOf('|');
+      out.push({ c: key.slice(0, p), id: key.slice(p + 1), t: d.t, by: d.by, del: !!d.del, json: d.del ? '' : d.json });
+      if (d.t > mx) mx = d.t;
+    }
+  }
+  out.sort((a, b) => a.t - b.t);
+  return { last: mx, changes: out };
+}
+
+/** ops: [{c, id, json}]  (json === null 이면 삭제) — Code.gs 의 api_write 와 같음 */
+function apiWrite(ops, by) {
+  if (!Array.isArray(ops)) throw new Error('잘못된 요청이에요');
+  const dedup = new Map();
+  for (const op of ops) {
+    if (!op || typeof op.c !== 'string' || op.c === '' || op.c.includes('|') || op.id === undefined || op.id === null) {
+      throw new Error('잘못된 기록이에요');
+    }
+    const k = op.c + '|' + String(op.id);
+    dedup.delete(k);            // 같은 문서가 여러 번 오면 마지막 것만
+    dedup.set(k, op);
+  }
+  let t = nextTime();
+  for (const [k, op] of dedup) {
+    const del = op.json === null || op.json === undefined;
+    const js = del ? '' : String(op.json);
+    if (js.length > MAX_DOC) throw new Error('기록이 너무 커요 (' + k + ')');
+    store.docs[k] = { t: t, by: by, del: del, json: js };
+    t++;
+  }
+  if (dedup.size) {
+    store.last = t - 1;
+    saveStore();
+  }
+  return { last: store.last };
+}
+
+/** 문서 전체를 바꿔요 (가져오기·복원). 없어진 문서는 삭제로 표시해서 열린 화면에도 반영돼요. */
+function replaceAll(newDocs, by) {
+  let t = nextTime();
+  const next = {};
+  for (const k of Object.keys(newDocs)) {
+    const d = newDocs[k];
+    next[k] = { t: t++, by: d.by || by, del: !!d.del, json: d.del ? '' : String(d.json || '') };
+  }
+  for (const k of Object.keys(store.docs)) {
+    if (!next[k] && !store.docs[k].del) next[k] = { t: t++, by: by, del: true, json: '' };
+  }
+  store = { last: t - 1, docs: next };
+  saveStore();
+}
+
+function countDocs(docs) {
+  const n = {};
+  for (const k of Object.keys(docs)) {
+    if (docs[k].del) continue;
+    const c = k.slice(0, k.indexOf('|'));
+    n[c] = (n[c] || 0) + 1;
+  }
+  return n;
+}
+
+/* ---------------- 자동 백업 ---------------- */
+function pad(n) { return String(n).padStart(2, '0'); }
+function dateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function stampStr(d) { return dateStr(d) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
+
+function listBackups() {
+  return fs.readdirSync(BACKUP_DIR)
+    .filter(f => /^[\w.-]+\.json$/.test(f))
+    .map(f => { const s = fs.statSync(path.join(BACKUP_DIR, f)); return { name: f, size: s.size, mtime: s.mtimeMs }; })
+    .sort((a, b) => b.mtime - a.mtime);
+}
+
+function backupNow(name) {
+  name = name || ('daily-' + dateStr(new Date()) + '.json');
+  let file = path.join(BACKUP_DIR, name);
+  if (!name.startsWith('daily-')) {   // 같은 초에 두 번 만들어도 앞의 백업을 덮어쓰지 않게
+    for (let i = 2; fs.existsSync(file); i++) file = path.join(BACKUP_DIR, name.replace(/\.json$/, '-' + i + '.json'));
+  }
+  fs.copyFileSync(STORE_FILE, file);
+  const daily = listBackups().filter(b => b.name.startsWith('daily-'));
+  daily.slice(BACKUP_KEEP).forEach(b => fs.unlinkSync(path.join(BACKUP_DIR, b.name)));
+  const manual = listBackups().filter(b => !b.name.startsWith('daily-'));
+  manual.slice(BACKUP_KEEP).forEach(b => fs.unlinkSync(path.join(BACKUP_DIR, b.name)));
+  return path.basename(file);
+}
+
+/** 오늘 백업이 없으면 만들어요. (PC가 새벽에 꺼져 있어도 켜지면 바로 백업돼요) */
+function dailyBackup() {
+  try {
+    const name = 'daily-' + dateStr(new Date()) + '.json';
+    if (!fs.existsSync(path.join(BACKUP_DIR, name))) {
+      backupNow(name);
+      console.log('[백업] ' + name + ' 저장했어요');
+    }
+  } catch (e) { console.error('[백업 실패] ' + e.message); }
+}
+dailyBackup();
+setInterval(dailyBackup, 30 * 60 * 1000).unref();
+
+/* ---------------- 로그인 (비밀번호를 설정한 경우만) ---------------- */
+function sessionToken() {
+  return crypto.createHash('sha256').update(config.secret + ':' + config.password).digest('hex');
+}
+function parseCookies(req) {
+  const out = {};
+  (req.headers.cookie || '').split(';').forEach(p => {
+    const i = p.indexOf('=');
+    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+  });
+  return out;
+}
+function safeEqual(a, b) {
+  const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+function isAuthed(req) {
+  if (!config.password) return true;
+  return safeEqual(parseCookies(req).sid || '', sessionToken());
+}
+function setSessionCookie(res) {
+  res.setHeader('Set-Cookie', 'sid=' + sessionToken() + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000');
+}
+
+/* ---------------- HTTP ---------------- */
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+
+function send(res, status, body, type, extra) {
+  res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }, extra || {}));
+  res.end(body);
+}
+function sendJson(res, status, obj) { send(res, status, JSON.stringify(obj), MIME['.json']); }
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []; let size = 0;
+    req.on('data', c => {
+      size += c.length;
+      if (size > MAX_BODY) { reject(new Error('요청이 너무 커요')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+function whoIs(req) {
+  let u = '';
+  try { u = decodeURIComponent(req.headers['x-user'] || ''); } catch (_) { u = ''; }
+  u = u.replace(/[\r\n]/g, ' ').trim().slice(0, 60);
+  return u || String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+}
+
+function appHtml() {
+  let html = fs.readFileSync(APP_FILE, 'utf8');
+  // 구글 연결층보다 먼저 단독 실행 연결층을 넣어요
+  html = html.replace(/<head>/i, '<head><script src="/standalone.js"></script>');
+  // 엑셀 라이브러리는 인터넷 없이도 되도록 PC에 있는 파일을 써요
+  html = html.replace(/https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx\/[\d.]+\/xlsx\.full\.min\.js/g, '/vendor/xlsx.full.min.js');
+  return html;
+}
+
+function serveStatic(res, rel) {
+  const file = path.normalize(path.join(PUBLIC, rel));
+  if (!file.startsWith(PUBLIC + path.sep)) return send(res, 404, 'Not found');
+  fs.readFile(file, (err, buf) => {
+    if (err) return send(res, 404, 'Not found');
+    send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream', rel.startsWith('vendor/') ? { 'Cache-Control': 'public, max-age=86400' } : null);
+  });
+}
+
+const LOGIN_HTML = (msg) => `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>앤도버 생활기록 · 로그인</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F4F6F5;font:15px system-ui,sans-serif;color:#1d2a24}
+form{background:#fff;padding:28px 24px;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);width:min(320px,calc(100vw - 32px));box-sizing:border-box}
+h1{font-size:18px;margin:0 0 16px}input,button{width:100%;box-sizing:border-box;font:inherit;padding:11px 12px;border-radius:9px}
+input{border:1px solid #c9d3ce;margin-bottom:10px}button{border:0;background:#1F6B4F;color:#fff;font-weight:600;cursor:pointer}
+p{color:#C23A3A;font-size:13px;margin:0 0 10px}</style></head><body>
+<form method="post" action="/login"><h1>앤도버 생활기록</h1>${msg ? '<p>' + msg + '</p>' : ''}
+<input type="password" name="password" placeholder="비밀번호" autofocus required><button>들어가기</button></form></body></html>`;
+
+const API = {
+  api_ping: () => ({ last: store.last, me: '' }),
+  api_pull: (args) => apiPull(args[0]),
+  api_write: (args, req) => apiWrite(args[0], whoIs(req)),
+};
+
+async function handle(req, res) {
+  const url = new URL(req.url, 'http://localhost');
+  const p = url.pathname;
+
+  if (p === '/login') {
+    if (req.method === 'POST') {
+      const form = new URLSearchParams(await readBody(req));
+      if (config.password && safeEqual(form.get('password') || '', config.password)) {
+        setSessionCookie(res);
+        res.writeHead(303, { Location: '/' }); return res.end();
+      }
+      return send(res, 401, LOGIN_HTML('비밀번호가 맞지 않아요.'), MIME['.html']);
+    }
+    return send(res, 200, LOGIN_HTML(''), MIME['.html']);
+  }
+
+  if (!isAuthed(req)) {
+    if (p.startsWith('/api/') || p.startsWith('/admin/')) return sendJson(res, 401, { error: '로그인이 필요해요' });
+    res.writeHead(303, { Location: '/login' }); return res.end();
+  }
+
+  // 앱 → 서버 (google.script.run 대신)
+  if (p.startsWith('/api/') && req.method === 'POST') {
+    const fn = API[p.slice(5)];
+    if (!fn) return sendJson(res, 404, { error: '없는 기능이에요' });
+    try {
+      const args = JSON.parse((await readBody(req)) || '[]');
+      return sendJson(res, 200, { result: fn(Array.isArray(args) ? args : [], req) });
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message || String(e) });
+    }
+  }
+
+  if (p === '/' || p === '/index.html') return send(res, 200, appHtml(), MIME['.html']);
+  if (p === '/admin') return serveStatic(res, 'admin.html');
+
+  // 관리 기능: 상태 · 가져오기 · 백업 · 복원 · 비밀번호
+  if (p === '/admin/status') {
+    return sendJson(res, 200, { counts: countDocs(store.docs), last: store.last, dataDir: DATA_DIR, backups: listBackups(), hasPassword: !!config.password });
+  }
+  if (p === '/admin/export') {
+    const name = 'andover-data-' + stampStr(new Date()) + '.json';
+    return send(res, 200, JSON.stringify(store), MIME['.json'], { 'Content-Disposition': 'attachment; filename="' + name + '"' });
+  }
+  if (p === '/admin/backup-file') {
+    const name = url.searchParams.get('name') || '';
+    if (!/^[\w.-]+\.json$/.test(name)) return send(res, 400, 'bad name');
+    const file = path.join(BACKUP_DIR, name);
+    if (!fs.existsSync(file)) return send(res, 404, 'Not found');
+    return send(res, 200, fs.readFileSync(file), MIME['.json'], { 'Content-Disposition': 'attachment; filename="' + name + '"' });
+  }
+  if (req.method === 'POST' && p.startsWith('/admin/')) {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const by = whoIs(req);
+      if (p === '/admin/backup') return sendJson(res, 200, { name: backupNow('manual-' + stampStr(new Date()) + '.json') });
+
+      if (p === '/admin/import-rows') {
+        // 구글 시트 'data' 시트의 행들: [key, updatedAt, by, deleted, 내용1, 내용2, ...]
+        const docs = {};
+        for (const row of body.rows || []) {
+          const key = String(row[0] == null ? '' : row[0]).trim();
+          const pi = key.indexOf('|');
+          if (pi <= 0 || key.startsWith('key')) continue;
+          const del = row[3] === true || String(row[3]).toUpperCase() === 'TRUE';
+          const json = row.slice(4).map(v => (v == null ? '' : String(v))).join('');
+          if (!del) JSON.parse(json);          // 깨진 기록이 있으면 가져오기 전에 멈춰요
+          docs[key] = { by: String(row[2] || ''), del: del, json: json };
+        }
+        if (!Object.keys(docs).length) throw new Error('가져올 기록을 찾지 못했어요. 구글 시트의 data 시트가 맞는지 확인해 주세요.');
+        const before = backupNow('before-import-' + stampStr(new Date()) + '.json');
+        replaceAll(docs, by);
+        return sendJson(res, 200, { counts: countDocs(store.docs), backup: before });
+      }
+
+      if (p === '/admin/restore') {
+        let src;
+        if (body.name) {
+          if (!/^[\w.-]+\.json$/.test(body.name)) throw new Error('잘못된 파일 이름');
+          src = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, body.name), 'utf8'));
+        } else src = body.store;
+        if (!src || typeof src.docs !== 'object') throw new Error('백업 파일 형식이 아니에요');
+        const before = backupNow('before-restore-' + stampStr(new Date()) + '.json');
+        const live = {};
+        for (const k of Object.keys(src.docs)) if (!src.docs[k].del) live[k] = src.docs[k];
+        replaceAll(live, by);
+        return sendJson(res, 200, { counts: countDocs(store.docs), backup: before });
+      }
+
+      if (p === '/admin/password') {
+        config.password = String(body.password || '');
+        writeJsonAtomic(CONFIG_FILE, config);
+        if (config.password) setSessionCookie(res);
+        return sendJson(res, 200, { ok: true, hasPassword: !!config.password });
+      }
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message || String(e) });
+    }
+    return sendJson(res, 404, { error: '없는 기능이에요' });
+  }
+
+  if (req.method === 'GET' && (p === '/standalone.js' || p.startsWith('/vendor/'))) return serveStatic(res, p.slice(1));
+  if (p === '/favicon.ico') return send(res, 204, '');
+  return send(res, 404, 'Not found');
+}
+
+const server = http.createServer((req, res) => {
+  handle(req, res).catch(e => { console.error(e); try { send(res, 500, '서버 오류: ' + e.message); } catch (_) { /* 이미 응답함 */ } });
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error('\n[오류] ' + PORT + '번 포트를 이미 쓰고 있어요. 프로그램이 이미 켜져 있는지 확인하거나,');
+    console.error('       data/config.json 의 "port" 값을 바꿔 주세요.\n');
+  } else console.error(e);
+  process.exit(1);
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  const lan = [];
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const a of list || []) if (a.family === 'IPv4' && !a.internal) lan.push('http://' + a.address + ':' + PORT);
+  }
+  const local = 'http://localhost:' + PORT;
+  console.log('');
+  console.log('  ✅ 앤도버 생활기록이 켜졌어요');
+  console.log('');
+  console.log('  이 PC에서:        ' + local);
+  lan.forEach(u => console.log('  다른 PC·휴대폰:   ' + u + '   (같은 와이파이/공유기에서)'));
+  console.log('  관리(가져오기·백업): ' + local + '/admin');
+  console.log('  데이터 폴더:       ' + DATA_DIR);
+  if (!config.password) console.log('\n  ⚠️  비밀번호가 없어요. 같은 와이파이의 누구나 들어올 수 있으니 /admin 에서 설정해 주세요.');
+  console.log('\n  이 창을 닫으면 프로그램이 꺼져요.\n');
+  if (!process.env.NO_BROWSER) {
+    const cmd = process.platform === 'win32' ? 'start "" "' + local + '"' : process.platform === 'darwin' ? 'open "' + local + '"' : 'xdg-open "' + local + '"';
+    exec(cmd, () => { /* 브라우저를 못 열어도 괜찮아요 */ });
+  }
+});

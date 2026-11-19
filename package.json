@@ -1,13 +1,14 @@
 {
-  "name": "academy-app",
-  "version": "1.0.0",
-  "description": "학원 관리 시스템",
+  "name": "andover-record",
+  "version": "2.0.0",
+  "description": "앤도버 생활기록 — 구글 없이 PC에서 돌아가는 단독 실행 버전",
+  "main": "server.js",
   "scripts": {
-    "start": "cd backend && node server.js",
-    "install": "cd backend && npm install",
-    "build": "echo 'No build step needed'"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "license": "UNLICENSED",
+  "private": true
 }
