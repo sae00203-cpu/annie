@@ -51,7 +51,14 @@ function writeJsonAtomic(file, obj) {
     fs.writeSync(fd, JSON.stringify(obj));
     fs.fsyncSync(fd);
   } finally { fs.closeSync(fd); }
-  fs.renameSync(tmp, file);
+  // 바탕화면이 OneDrive 와 동기화되면 파일이 잠깐 잠길 수 있어서, 몇 번 다시 시도해요
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tmp, file); return; } catch (e) {
+      if (!['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) throw e;
+      if (i >= 8) { fs.copyFileSync(tmp, file); try { fs.unlinkSync(tmp); } catch (_) { /* 남아도 괜찮아요 */ } return; }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60 * (i + 1));
+    }
+  }
 }
 
 const config = loadConfig();
