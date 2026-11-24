@@ -496,6 +496,23 @@ h2{font-size:20px}
 .srmh{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}.srmh b{font-size:15px}
 .srcm{display:grid;gap:8px;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
 .srcm p{margin:2px 0 0;white-space:pre-wrap;font-size:14px}
+/* 밴드 업로드 확인 */
+.vup{display:grid;gap:8px;padding:10px 4px 4px}
+.vuph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}.vuph b{font-size:15px}
+.vupd{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.vupd input{width:auto;margin:0;padding:5px 8px}
+.vugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.vu{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:6px;align-items:center;text-align:left;border:1.5px solid var(--line);border-radius:10px;padding:8px 9px;background:var(--surface);min-height:52px}
+.vu .vi{grid-row:1 / 3;font-size:18px;line-height:1}
+.vu b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vu small{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vu.up{border-color:var(--ok);background:var(--ok-soft)}.vu.up small{color:var(--ok)}
+.vu.fb{border-color:var(--accent);background:var(--accent-soft)}
+.vu.none{border-style:dashed}
+.vmsgs{border:1px solid var(--bad);border-radius:10px;padding:8px 10px;background:var(--bad-soft)}
+.vmsgs>summary{cursor:pointer;font-weight:700;color:var(--bad);font-size:14px}
+.vum{display:grid;gap:4px;margin-top:10px}.vumh{display:flex;align-items:center;gap:8px}.vumh .ghost{margin-left:auto}
+.vtpl{margin-top:10px}.vtpl summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--accent)}
+.vall{margin:4px 0;font-weight:700;color:var(--ok)}
 @media (min-width:1100px){
   #v-coach:not([hidden]){display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);align-items:start}
   #v-coach>.datebar,#v-coach>.wds,#v-coach>.chips,#v-coach>.empty,#v-coach>.hban{grid-column:1 / -1}
@@ -2442,7 +2459,7 @@ var SITES=['Trophy 9','Anchor English','Edu Spring','Into Reading','Aone'];
 var NUMK=['첫째','둘째','셋째','넷째','다섯째'];
 function defCfg(){return {closures:[],makeups:[],hOff:{},mStart:1,crit:CRIT0.slice(),vdesc:JSON.parse(JSON.stringify(VDESC0)),vtip:VTIP0.slice(),vlines:JSON.parse(JSON.stringify(VLINES0)),vtips:JSON.parse(JSON.stringify(VTIPS0)),vframe:JSON.parse(JSON.stringify(VFRAME0)),vmax:4,etypes:ETYPES0(),ivItems:['점수'],rbItems:['Listening','Reading','Writing','Speaking'],rbMax:5}}
 function ETYPES0(){return ['JET 3/4','JET 5/6','TOEFL Primary Step 2','TOEFL Junior Basic'].map(function(n,i){return {id:['j34','j56','tp2','tjb'][i],name:n,items:['Listening','Reading','LFM']}})}
-S.cfg=defCfg();S.tests=new Map();S.online=new Map();S.osent=new Map();S.vassign=new Map();S.video=new Map();S.memo=new Map();
+S.cfg=defCfg();S.tests=new Map();S.online=new Map();S.osent=new Map();S.vassign=new Map();S.video=new Map();S.vup=new Map();S.memo=new Map();
 S.sub={coach:'do',ov:'online',mr:'table',dash:'in'};S.prevTab='today';
 var mondayOf=function(s){var w=parse(s).getDay();return addDays(s,-((w+6)%7))};
 var mdw=function(s){var d=parse(s);return (d.getMonth()+1)+'/'+d.getDate()+'('+DOW[d.getDay()]+')'};
@@ -2660,6 +2677,46 @@ document.addEventListener('change',function(e){
 /* ---------- Video Check ---------- */
 var vId=function(aid,sid){return aid+'_'+sid};
 var vGet=function(aid,sid){return S.video.get(vId(aid,sid))||null};
+/* ---------- 밴드 업로드 확인 ---------- */
+var vupGet=function(aid,sid){return S.vup.get(aid+'_'+sid)||null};
+function vState(aid,sid){return vGet(aid,sid)?'fb':vupGet(aid,sid)?'up':'none'}
+function vupDate(aid,sid){var u=vupGet(aid,sid);return u?u.date:''}
+function vupToggle(a,s){
+  var id=a.id+'_'+s.id;
+  if(S.vup.has(id)){S.vup.delete(id);write('vup/'+id,null,'u'+id);return}
+  var d=($('vupD')&&$('vupD').value)||today();
+  var o={id:id,aid:a.id,sid:s.id,classId:s.classId,date:d,savedAt:new Date().toISOString()};
+  S.vup.set(id,o);write('vup/'+id,o,'u'+id);
+}
+var VUP_TPL0='안녕하세요, 앤도버 어학원입니다.\n{이름}({영어이름}) 학생의 영상 숙제 "{과제}" ({날짜} 수업)가 아직 밴드에 올라오지 않았어요.\n다음 수업 전까지 밴드에 올려 주시면 선생님이 피드백 드릴게요. 감사합니다 😊';
+function vupMsg(a,s){var t=S.cfg.vupTpl||VUP_TPL0;return t.replace(/\(\{영어이름\}\)/g,s.ename?'('+s.ename+')':'').replace(/\{이름\}/g,s.name).replace(/\{영어이름\}/g,s.ename||'').replace(/\{과제\}/g,a.title).replace(/\{날짜\}/g,md(a.date))}
+function vupHTML(a,list){
+  var up=0,fb=0,miss=[];
+  var grid=list.map(function(s){
+    var st=vState(a.id,s.id),d=vupDate(a.id,s.id);if(st!=='none')up++;if(st==='fb')fb++;if(st==='none')miss.push(s);
+    return '<button type="button" class="vu '+st+'" '+(st==='fb'?'data-vs':'data-vup')+'="'+esc(s.id)+'" aria-pressed="'+(st!=='none')+'" title="'+(st==='fb'?'피드백 완료 · 누르면 피드백 보기':st==='up'?'올림 확인 · 다시 누르면 취소':'아직 안 올림 · 누르면 올림으로')+'"><span class="vi" aria-hidden="true">'+(st==='fb'?'💬':st==='up'?'✅':'⬜')+'</span><b>'+esc(s.name)+'</b>'+(d?'<small>'+md(d)+'</small>':st==='fb'?'<small>피드백</small>':'')+'</button>';
+  }).join('');
+  var o='<div class="vup"><div class="vuph"><b>올림 '+up+'/'+list.length+'</b><span class="muted">피드백 '+fb+'</span><label class="vupd">올린 날짜 <input type="date" id="vupD" class="tx" value="'+(S.ov.vupD||today())+'"></label></div>'
+    +'<p class="hint" style="margin:0 0 6px">밴드에서 영상을 확인하면 이름을 눌러 ✅로 바꿔요. 다시 누르면 취소돼요. 💬는 피드백까지 끝난 학생이에요.</p>'
+    +'<div class="vugrid">'+grid+'</div>';
+  if(miss.length){
+    o+='<details class="vmsgs"'+(S.ov.vmsgOpen?' open':'')+'><summary>미제출 '+miss.length+'명 · 개인 안내 메시지</summary>'
+      +miss.map(function(s){return '<div class="vum"><div class="vumh"><b>'+esc(s.name)+'</b>'+(s.ename?'<span class="muted">'+esc(s.ename)+'</span>':'')+'<button type="button" class="ghost sm" data-vupcopy="'+esc(s.id)+'">복사</button></div><textarea class="cmsg" id="vum_'+esc(s.id)+'" style="min-height:92px">'+esc(vupMsg(a,s))+'</textarea></div>'}).join('')
+      +'<details class="vtpl"><summary>메시지 틀 고치기</summary><p class="hint">{이름} {영어이름} {과제} {날짜} 는 학생마다 자동으로 바뀌어요.</p><textarea id="vupTpl" class="tx" style="min-height:96px">'+esc(S.cfg.vupTpl||VUP_TPL0)+'</textarea></details></details>';
+  }else o+='<p class="vall">🎉 전원 올렸어요</p>';
+  return o+'<button type="button" class="link" data-vadel="'+esc(a.id)+'">과제 삭제</button></div>';
+}
+document.addEventListener('click',function(e){
+  var t=e.target;if(!t.closest||!t.closest('#v-ov'))return;var O=S.ov;
+  var u=t.closest('[data-vup]');if(u){var a=S.vassign.get(O.vaid),s=stuById(u.dataset.vup);if(a&&s){vupToggle(a,s);renderVideo()}return}
+  var cp=t.closest('[data-vupcopy]');if(cp){var ta=$('vum_'+cp.dataset.vupcopy);if(ta)srCopy(ta.value);return}
+});
+document.addEventListener('change',function(e){
+  var t=e.target;if(!t.closest||!t.closest('#v-ov'))return;
+  if(t.id==='vupD'){S.ov.vupD=t.value;return}
+  if(t.id==='vupTpl'){S.cfg.vupTpl=t.value.trim()||'';if(!S.cfg.vupTpl)delete S.cfg.vupTpl;cfgPut();renderVideo();toast('메시지 틀을 저장했어요')}
+});
+document.addEventListener('toggle',function(e){var t=e.target;if(t.classList&&t.classList.contains('vmsgs'))S.ov.vmsgOpen=t.open},true);
 function vTotal(sc){return (sc||[]).reduce(function(a,b){return a+(Number(b)||0)},0)}
 function vDesc(i,lv){var d=(S.cfg.vdesc||[])[i]||[];return (d[lv-1]||'').trim()}
 function vLines(i,lv){var l=((S.cfg.vlines||{})[i+'|'+lv]||[]).map(function(x){return String(x).trim()}).filter(Boolean);return l.length?l:(VLINES0[i+'|'+lv]||[])}
@@ -2741,15 +2798,15 @@ function renderVideo(){
   var sel='<div class="vmo"><button type="button" class="nav" data-vmm="-1" aria-label="지난달">‹</button><b>'+esc(mLabel(ym,cc))+'</b><button type="button" class="nav" data-vmm="1" aria-label="다음달">›</button></div>';
   var list=roster(cc);
   var arows=as.map(function(a){
-    var sub=list.filter(function(s){return vGet(a.id,s.id)}),miss=list.filter(function(s){return !vGet(a.id,s.id)});
-    return '<div class="va'+(a.id===O.vaid?' sel':'')+'"><button type="button" class="vah" data-va="'+esc(a.id)+'"><b>'+esc(a.title)+'</b><span>'+md(a.date)+'</span><span class="cprog '+(miss.length?'bad':'ok')+'">제출 '+sub.length+'/'+list.length+'</span></button>'
-      +(a.id===O.vaid?'<div class="vmiss"><div><span class="muted">제출 '+sub.length+'</span> '+(sub.length?sub.map(function(s){return esc(s.name)}).join(', '):'-')+'</div><div><span class="muted">미제출 '+miss.length+'</span> '+(miss.length?miss.map(function(s){return esc(s.name)}).join(', '):'없음 (전원 제출)')+'</div><button type="button" class="link" data-vadel="'+esc(a.id)+'">과제 삭제</button></div>':'')+'</div>';
+    var sub=list.filter(function(s){return vState(a.id,s.id)!=='none'}),miss=list.filter(function(s){return vState(a.id,s.id)==='none'});
+    return '<div class="va'+(a.id===O.vaid?' sel':'')+'"><button type="button" class="vah" data-va="'+esc(a.id)+'"><b>'+esc(a.title)+'</b><span>'+md(a.date)+'</span><span class="cprog '+(miss.length?'bad':'ok')+'">올림 '+sub.length+'/'+list.length+'</span></button>'
+      +(a.id===O.vaid?vupHTML(a,list):'')+'</div>';
   }).join('');
   var reg='<details class="vbox vreg"><summary class="fl" style="margin:0;cursor:pointer">과제 등록 (이 반 전체가 대상)</summary>'
     +'<div class="row2" style="margin-top:8px"><input id="vTitle" class="tx" style="flex:1 1 200px" maxlength="60" placeholder="예) Wonderskills I2 Unit 7 낭독촬영"><input type="date" id="vDate" class="tx" style="flex:0 0 auto;width:auto" value="'+today()+'"><button type="button" class="ghost" id="vAdd">등록</button></div></details>';
   var alist='<div class="vbox"><div class="fl" style="margin-top:0">과제 · '+esc(cc.name)+'</div>'+(as.length?'<div class="valist">'+arows+'</div>':'<p class="hint">이 달에 등록된 과제가 없어요. 위 화살표로 다른 달을 볼 수 있어요. 새 과제는 아래 \'과제 등록\'에서 추가해요.</p>')+'</div>';
   var curA=S.vassign.get(O.vaid);
-  var slist='<div class="vbox"><div class="fl" style="margin-top:0">학생'+(curA?' · '+esc(curA.title):'')+'</div>'+(rost.length?'<div class="vres" style="margin-top:6px">'+rost.map(function(x){var ok=curA&&vGet(curA.id,x.id);return '<button type="button" class="vr'+(x.id===O.vsid?' on':'')+'" data-vs="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.ename||'')+'</span>'+(curA?'<span class="cprog '+(ok?'ok':'bad')+'" style="margin-left:auto">'+(ok?'제출':'미제출')+'</span>':'')+'</button>'}).join('')+'</div>':'<p class="hint">이 반에 학생이 없어요.</p>')+'</div>';
+  var slist='<div class="vbox"><div class="fl" style="margin-top:0">학생'+(curA?' · '+esc(curA.title):'')+'</div>'+(rost.length?'<div class="vres" style="margin-top:6px">'+rost.map(function(x){var st=curA?vState(curA.id,x.id):'none',d=curA?vupDate(curA.id,x.id):'';return '<button type="button" class="vr'+(x.id===O.vsid?' on':'')+'" data-vs="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.ename||'')+'</span>'+(curA?'<span class="cprog '+(st==='none'?'bad':'ok')+'" style="margin-left:auto">'+(st==='fb'?'피드백 완료':st==='up'?'올림 '+md(d):'미제출')+'</span>':'')+'</button>'}).join('')+'</div>':'<p class="hint">이 반에 학생이 없어요.</p>')+'</div>';
   var s=stuById(O.vsid),form='';
   if(s){
     var sas=as;
@@ -3638,7 +3695,7 @@ async function boot(){
     });
   }
   subMap('tests','xt','t','tests');subMap('online','xo','o','online');subMap('osent','xn','n','osent');
-  subMap('vassign','xa','a','vassign');subMap('rounds','xr','r','rounds');subMap('exam','xe','e','exam');subMap('video','xv','v','video');subMap('memo','xm','m','memo');
+  subMap('vassign','xa','a','vassign');subMap('rounds','xr','r','rounds');subMap('exam','xe','e','exam');subMap('video','xv','v','video');subMap('vup','xu','u','vup');subMap('memo','xm','m','memo');
   sub('settings','xg',function(docs){if(dirty.has('gmain'))return;var d=docs.find(function(x){return x.id==='main'});S.cfg=Object.assign(defCfg(),d?JSON.parse(JSON.stringify(d.data())):{});S.cfg.crit=(S.cfg.crit||CRIT0).slice(0,5);while(S.cfg.crit.length<5)S.cfg.crit.push('항목'+(S.cfg.crit.length+1));if(!S.cfg.xl2){S.cfg.crit=CRIT0.slice();S.cfg.vdesc=JSON.parse(JSON.stringify(VDESC0));S.cfg.vtip=VTIP0.slice();S.cfg.vmax=4;S.cfg.xl2=true;cfgPut()}
   if(!Array.isArray(S.cfg.vdesc))S.cfg.vdesc=JSON.parse(JSON.stringify(VDESC0));if(!Array.isArray(S.cfg.vtip))S.cfg.vtip=VTIP0.slice();if(!S.cfg.vlines||typeof S.cfg.vlines!=='object')S.cfg.vlines=JSON.parse(JSON.stringify(VLINES0));if(!Array.isArray(S.cfg.vtips))S.cfg.vtips=JSON.parse(JSON.stringify(VTIPS0));if(!S.cfg.vframe)S.cfg.vframe=JSON.parse(JSON.stringify(VFRAME0));
   if(!S.cfg.xl1){S.cfg.etypes=ETYPES0();S.cfg.rbItems=['Listening','Reading','Writing','Speaking'];S.cfg.rbMax=5;S.cfg.xl1=true;cfgPut()}if(!Array.isArray(S.cfg.rbItems)||!S.cfg.rbItems.length)S.cfg.rbItems=['Listening','Reading','Writing','Speaking'];if(!Array.isArray(S.cfg.etypes)||!S.cfg.etypes.length)S.cfg.etypes=defCfg().etypes;if(!Array.isArray(S.cfg.ivItems)||!S.cfg.ivItems.length)S.cfg.ivItems=['점수'];S.mr.month=monthKeyOf(today())});
