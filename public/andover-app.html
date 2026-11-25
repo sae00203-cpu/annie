@@ -515,6 +515,9 @@ h2{font-size:20px}
 .vall{margin:4px 0;font-weight:700;color:var(--ok)}
 .spcg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,220px));gap:10px}.spcg label{display:grid;gap:4px;font-size:13px;font-weight:600}
 .tag.spct{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.spcdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.spclv{display:inline-flex;align-items:center;font-weight:700}
+.spcrow{display:flex;flex-wrap:wrap;gap:6px 12px;margin:8px 0 4px;font-size:13px}
 @media (min-width:1100px){
   #v-coach:not([hidden]){display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);align-items:start}
   #v-coach>.datebar,#v-coach>.wds,#v-coach>.chips,#v-coach>.empty,#v-coach>.hban{grid-column:1 / -1}
@@ -882,7 +885,8 @@ function spcCfgHTML(){
    +'<p class="hint" style="margin:0 0 8px">Lesson plan의 스피킹 칸(예: Day 30 Video 찍기)에서 Day 번호를 읽어, 인증일에는 코칭 리스트에 <b>🎤 SPC 인증 영상</b>이 생기고 Video Check에 과제가 자동으로 만들어져요.</p>'
    +'<div class="spcg"><label>총 Day 수<input type="number" id="spcMax" class="tx" min="1" max="500" value="'+C.max+'"></label><label>인증 간격 (Day)<input type="number" id="spcEvery" class="tx" min="1" max="100" value="'+C.every+'"></label></div>'
    +'<p class="hint">인증일 '+ds.length+'번: Day '+ds.join(', ')+'</p>'
-   +'<div class="fl">레벨 목록 (한 줄에 하나)</div><textarea id="spcLevels" class="tx" style="min-height:110px" placeholder="예)&#10;Level 1&#10;Level 2&#10;Level 3">'+esc(C.levels.join('\n'))+'</textarea>'
+   +'<div class="fl">레벨 목록 (한 줄에 하나)</div><textarea id="spcLevels" class="tx" style="min-height:110px" placeholder="예)&#10;Red&#10;Orange&#10;Yellow">'+esc(C.levels.join('\n'))+'</textarea>'
+   +'<div class="spcrow">'+C.levels.map(function(l,i){return '<span class="spclv">'+(i+1)+'. '+spcDot(l)+esc(l)+'</span>'}).join('')+'</div>'
    +'<p class="hint">반마다 레벨은 ⚙ 반 관리에서 골라요. Lesson plan 스피킹 칸에 레벨이 적혀 있으면 그걸 먼저 써요.'+(used.length?'<br>지금 지정: '+used.join(' · '):'')+'</p></div>';
 }
 document.addEventListener('change',function(e){
@@ -1070,7 +1074,7 @@ function planHTML(c){
       +(b.hw?'<div class="pl hw"><small>숙제</small>'+nl(b.hw)+'</div>':'')+'</div></div>';
   });
   if(pl.voca)h+='<div class="px"><small>단어시험 준비</small><span>'+nl(pl.voca)+'</span></div>';
-  if(pl.spc){var cd0=spcCertDays(pl),lv1=spcLevel(c,pl);h+='<div class="px"><small>스피킹 숙제'+(lv1?' · '+esc(lv1):'')+'</small><span>'+nl(pl.spc)+(cd0.length?' <span class="tag spct">🎤 인증 영상 Day '+cd0.join(', ')+'</span>':'')+'</span></div>'}
+  if(pl.spc){var cd0=spcCertDays(pl),lv1=spcLevel(c,pl);h+='<div class="px"><small>스피킹 숙제'+(lv1?' · '+spcLvHTML(lv1):'')+'</small><span>'+nl(pl.spc)+(cd0.length?' <span class="tag spct">🎤 인증 영상 Day '+cd0.join(', ')+'</span>':'')+'</span></div>'}
   if(pl.online)h+='<div class="px"><small>온라인 숙제</small><span>'+nl(pl.online)+'</span></div>';
   if(pl.notice)h+='<details class="pn"><summary>이달 공지</summary><div>'+nl(pl.notice)+'</div></details>';
   return h+'</div>';
@@ -1877,7 +1881,12 @@ function hwUnits(t,legacy){
   return items.map(function(x,k){return {t:hwClean(x),g:k}});
 }
 /* ---------- 스피킹 인증제 ---------- */
-function spcCfg(){var o=S.cfg.spcCert||{};return {max:Number(o.max)||72,every:Number(o.every)||6,levels:Array.isArray(o.levels)?o.levels:[]}}
+var SPC_LEVELS0=['Red','Orange','Yellow','Green','Lime','Mint','Blue','Purple','Black'];
+var SPC_COLOR={red:'#E53935',orange:'#FB8C00',yellow:'#FDD835',green:'#43A047',lime:'#9CCC65',mint:'#4DD0C4',blue:'#1E88E5',purple:'#8E24AA',black:'#212121'};
+function spcCfg(){var o=S.cfg.spcCert||{};return {max:Number(o.max)||72,every:Number(o.every)||6,levels:Array.isArray(o.levels)&&o.levels.length?o.levels:SPC_LEVELS0.slice()}}
+/* 레벨 이름 앞에 그 색 점 */
+function spcDot(lv){var k=String(lv||'').trim().toLowerCase().split(/\s+/)[0],c=SPC_COLOR[k];return c?'<i class="spcdot" style="background:'+c+'" aria-hidden="true"></i>':''}
+function spcLvHTML(lv){return lv?'<span class="spclv">'+spcDot(lv)+esc(lv)+'</span>':''}
 /* 'Day 25,26,27' · 'Day 37.38.39' · 'Day 25-27' → [25,26,27] */
 function spcDays(t){
   var out=[],s=String(t||''),m,re=/day\s*([\d\s,.~\-–]+)/ig;
@@ -1891,8 +1900,7 @@ function spcDays(t){
 /* 수업계획의 스피킹 칸이나 반 설정에서 레벨을 찾아요 */
 function spcLevel(c,pl){
   var L=spcCfg().levels,t=String(pl&&pl.spc||'');
-  for(var i=0;i<L.length;i++){if(L[i]&&t.toLowerCase().indexOf(String(L[i]).toLowerCase())>=0)return L[i]}
-  var m=t.match(/^(.*?)\s*day\s*\d/i);if(m&&m[1].trim())return m[1].trim();
+  for(var i=0;i<L.length;i++){if(!L[i])continue;var rx=new RegExp('(^|[^A-Za-z가-힣])'+String(L[i]).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![A-Za-z가-힣])','i');if(rx.test(t))return L[i]}
   return (c&&c.spcLv)||'';
 }
 function spcCertDays(pl){var C=spcCfg();return spcDays(pl&&pl.spc).filter(function(d){return d%C.every===0&&d<=C.max})}
