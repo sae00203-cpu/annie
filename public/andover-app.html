@@ -2542,12 +2542,10 @@ function onlineCfgHTML(){
   var L=siteList();
   var cards=L.map(function(n){
     var g=siteCfgOf(n),users=S.classes.filter(function(c){return (c.sites||[]).indexOf(n)>=0}).sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
-    var own=users.filter(function(c){return c.onItems&&c.onItems[n]&&c.onItems[n].trim()});
     return '<section class="olc"><div class="olh"><h3>'+esc(n)+'</h3><button type="button" class="ghost sm" data-gsdel="'+esc(n)+'">목록에서 빼기</button></div>'
-      +'<p class="olu">'+(users.length?'쓰는 반 '+users.length+'개: '+users.map(function(c){return esc(c.name)}).join(', '):'<span class="muted">아직 쓰는 반이 없어요. 반 관리에서 켜 주세요.</span>')+'</p>'
+      +'<p class="olu">'+(users.length?'<b>해당반:</b> '+users.map(function(c){return esc(c.name)}).join(', '):'<span class="muted">해당반 없음 · 반 관리에서 켜 주세요</span>')+'</p>'
       +'<label class="fl">기본 온라인 학습 날짜</label><select class="tx" data-gsm="'+esc(n)+'" style="width:auto"><option value="every"'+(siteModeDef(n)==='every'?' selected':'')+'>수업일마다</option><option value="book"'+(siteModeDef(n)==='book'?' selected':'')+'>교재 수업이 있는 날만</option></select>'
-      +'<label class="fl">기본 활동 항목 (한 줄에 하나)</label><textarea class="tx" data-gsi="'+esc(n)+'" style="min-height:76px" placeholder="예)&#10;eBook&#10;Vocabulary&#10;Book Quiz">'+esc(g.items||'')+'</textarea>'
-      +(own.length?'<p class="hint">이 반들은 따로 적은 항목을 써요: '+own.map(function(c){return '<b>'+esc(c.name)+'</b> ('+esc(lines(c.onItems[n]).join(', '))+')'}).join(' · ')+'</p>':'')
+      +'<label class="fl">기본 활동 항목 (한 줄에 하나)</label><textarea class="tx" data-gsi="'+esc(n)+'" style="min-height:76px" placeholder="여기에 적으면 모든 해당반의 기본값이 돼요">'+esc(g.items||'')+'</textarea>'
       +'</section>';
   }).join('');
   return '<h2 class="sechd">온라인 학습 관리</h2><p class="hint">온라인 학습 사이트를 추가하고, 사이트마다 기본 날짜와 활동 항목을 정해요. 반마다 쓸 사이트는 <button type="button" class="linkb" data-ssub="class">반 관리</button>에서 켜요.</p>'
