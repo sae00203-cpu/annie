@@ -227,7 +227,7 @@ function send(res, status, body, type, extra) {
 }
 function sendJson(res, status, obj) { send(res, status, JSON.stringify(obj), MIME['.json']); }
 
-function readBody(req) {
+function readRaw(req) {
   return new Promise((resolve, reject) => {
     const chunks = []; let size = 0;
     req.on('data', c => {
@@ -235,9 +235,73 @@ function readBody(req) {
       if (size > MAX_BODY) { reject(new Error('요청이 너무 커요')); req.destroy(); return; }
       chunks.push(c);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
+}
+async function readBody(req) { return (await readRaw(req)).toString('utf8'); }
+
+/* ---------------- 프로그램 업데이트 (ZIP) ----------------
+ * 관리 화면에서 업데이트 ZIP 을 올리면 프로그램 파일만 바꿔요.
+ * data 폴더(학생 기록 · 백업 · 비밀번호)는 절대 건드리지 않아요.
+ */
+const zlib = require('zlib');
+const UPDATABLE = /^(server\.js|package\.json|README\.md|\.gitignore|start-windows\.bat|start-mac\.command|public\/[A-Za-z0-9_.\-\/]+)$/;
+
+function unzipEntries(buf) {
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP 파일이 아니에요');
+  const count = buf.readUInt16LE(eocd + 10);
+  let off = buf.readUInt32LE(eocd + 16);
+  const out = [];
+  for (let n = 0; n < count; n++) {
+    if (buf.readUInt32LE(off) !== 0x02014b50) throw new Error('ZIP 파일이 손상됐어요');
+    const method = buf.readUInt16LE(off + 10), csize = buf.readUInt32LE(off + 20);
+    const nlen = buf.readUInt16LE(off + 28), elen = buf.readUInt16LE(off + 30), clen = buf.readUInt16LE(off + 32);
+    const local = buf.readUInt32LE(off + 42);
+    const name = buf.slice(off + 46, off + 46 + nlen).toString('utf8').replace(/\\/g, '/');
+    off += 46 + nlen + elen + clen;
+    if (name.endsWith('/')) continue;
+    if (buf.readUInt32LE(local) !== 0x04034b50) throw new Error('ZIP 파일이 손상됐어요');
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const raw = buf.slice(start, start + csize);
+    let data;
+    if (method === 0) data = raw;
+    else if (method === 8) data = zlib.inflateRawSync(raw);
+    else throw new Error('지원하지 않는 압축 방식이에요 (' + name + ')');
+    out.push({ name, data });
+  }
+  return out;
+}
+
+function applyUpdate(buf) {
+  let files = unzipEntries(buf);
+  // 'andover-record/server.js' 처럼 맨 위 폴더 하나로 묶여 있으면 그 폴더를 벗겨요
+  const tops = new Set(files.map(f => f.name.split('/')[0]));
+  if (tops.size === 1 && files.every(f => f.name.includes('/'))) {
+    const top = [...tops][0] + '/';
+    files = files.map(f => ({ name: f.name.slice(top.length), data: f.data }));
+  }
+  const ok = files.filter(f => UPDATABLE.test(f.name) && !f.name.split('/').includes('..'));
+  if (!ok.some(f => f.name === 'server.js') || !ok.some(f => f.name === 'public/andover-app.html')) {
+    throw new Error('앤도버 생활기록 업데이트 파일이 아니에요 (server.js, public/andover-app.html 이 필요해요)');
+  }
+  // 바꾸기 전 프로그램을 백업해 두어요 (되돌릴 수 있게)
+  const bdir = path.join(BACKUP_DIR, 'program-' + stampStr(new Date()));
+  for (const f of ok) {
+    const cur = path.join(ROOT, f.name);
+    if (fs.existsSync(cur)) { fs.mkdirSync(path.dirname(path.join(bdir, f.name)), { recursive: true }); fs.copyFileSync(cur, path.join(bdir, f.name)); }
+  }
+  for (const f of ok) {
+    const dest = path.join(ROOT, f.name);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest + '.tmp', f.data);
+    fs.renameSync(dest + '.tmp', dest);
+  }
+  return { updated: ok.length, skipped: files.length - ok.length, backup: path.basename(bdir) };
 }
 
 function whoIs(req) {
@@ -330,6 +394,15 @@ async function handle(req, res) {
     const file = path.join(BACKUP_DIR, name);
     if (!fs.existsSync(file)) return send(res, 404, 'Not found');
     return send(res, 200, fs.readFileSync(file), MIME['.json'], { 'Content-Disposition': 'attachment; filename="' + name + '"' });
+  }
+  if (req.method === 'POST' && p === '/admin/update') {
+    try {
+      const r = applyUpdate(await readRaw(req));
+      console.log('[업데이트] 프로그램 파일 ' + r.updated + '개를 바꿨어요. 이 창을 닫고 다시 실행해 주세요.');
+      return sendJson(res, 200, r);
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message || String(e) });
+    }
   }
   if (req.method === 'POST' && p.startsWith('/admin/')) {
     try {
