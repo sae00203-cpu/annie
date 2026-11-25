@@ -1881,8 +1881,8 @@ function hwUnits(t,legacy){
   return items.map(function(x,k){return {t:hwClean(x),g:k}});
 }
 /* ---------- 스피킹 인증제 ---------- */
-var SPC_LEVELS0=['Red','Orange','Yellow','Green','Lime','Mint','Blue','Purple','Black'];
-var SPC_COLOR={red:'#E53935',orange:'#FB8C00',yellow:'#FDD835',green:'#43A047',lime:'#9CCC65',mint:'#4DD0C4',blue:'#1E88E5',purple:'#8E24AA',black:'#212121'};
+var SPC_LEVELS0=['Red','Orange','Yellow','Green','Lime','Mint','Blue','Indigo','Purple','Black'];
+var SPC_COLOR={red:'#E53935',orange:'#FB8C00',yellow:'#FDD835',green:'#43A047',lime:'#9CCC65',mint:'#4DD0C4',blue:'#1E88E5',indigo:'#3949AB',purple:'#8E24AA',black:'#212121'};
 function spcCfg(){var o=S.cfg.spcCert||{};return {max:Number(o.max)||72,every:Number(o.every)||6,levels:Array.isArray(o.levels)&&o.levels.length?o.levels:SPC_LEVELS0.slice()}}
 /* 레벨 이름 앞에 그 색 점 */
 function spcDot(lv){var k=String(lv||'').trim().toLowerCase().split(/\s+/)[0],c=SPC_COLOR[k];return c?'<i class="spcdot" style="background:'+c+'" aria-hidden="true"></i>':''}
