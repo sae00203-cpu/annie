@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>앤도버 생활기록 가이드</title>
+<style>
+/* 레이아웃: 한 줄 기둥(본문 폭 880px) · 맨 위 접속 카드 → 하루 순서 → 화면별 사용법 → 월간 → 문제 해결 */
+:root{
+  --bg:#f4f6fb; --paper:#ffffff; --ink:#182033; --mute:#5b6478; --line:#dfe4ef;
+  --accent:#24418a; --accent-soft:#e7ecf8; --ok:#1f7a4d; --ok-soft:#e5f4ec; --warn:#9a5b00; --warn-soft:#fff3dc;
+  --f:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10141f; --paper:#182032; --ink:#e8ecf5; --mute:#a3acbf; --line:#2b3550;
+  --accent:#8fa9f0; --accent-soft:#1f2c4d; --ok:#6fd3a0; --ok-soft:#173326; --warn:#f2c46b; --warn-soft:#3a2c12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141f; --paper:#182032; --ink:#e8ecf5; --mute:#a3acbf; --line:#2b3550;
+  --accent:#8fa9f0; --accent-soft:#1f2c4d; --ok:#6fd3a0; --ok-soft:#173326; --warn:#f2c46b; --warn-soft:#3a2c12; color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.7;word-break:keep-all}
+.wrap{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:44px}
+h1,h2,h3{text-wrap:balance;line-height:1.35;margin:0}
+h1{font-size:clamp(28px,5vw,38px);font-weight:700}
+h2{font-size:22px;font-weight:700}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--accent)}
+.lead{font-size:18px;color:var(--mute);max-width:62ch}
+header{display:grid;gap:14px}
+section{display:grid;gap:18px}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px}
+nav.toc a{font-size:14px;color:var(--accent);background:var(--accent-soft);text-decoration:none;padding:6px 12px;border-radius:999px;font-weight:500}
+nav.toc a:focus-visible,.btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.connect{background:var(--paper);border:2px solid var(--accent);border-radius:14px;padding:20px;display:grid;gap:14px}
+.addr{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.addr code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(18px,4.5vw,24px);font-weight:700;color:var(--accent);background:var(--accent-soft);padding:8px 14px;border-radius:10px;user-select:all;overflow-wrap:anywhere}
+.btn{display:inline-block;background:var(--accent);color:var(--paper);text-decoration:none;font:600 15px var(--f);padding:10px 18px;border-radius:10px;border:0;cursor:pointer}
+.btn.ghost{background:var(--paper);color:var(--accent);border:1px solid var(--accent)}
+.note{font-size:14px;color:var(--mute)}
+ol.num{margin:0;padding-left:1.4em;display:grid;gap:6px}
+ol.num li::marker{color:var(--accent);font-weight:700}
+ul.plain{margin:0;padding-left:1.2em;display:grid;gap:6px}
+ul.plain li::marker{color:var(--accent)}
+.day{display:grid;gap:10px}
+.slot{display:grid;grid-template-columns:96px 1fr;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.slot .when{font-weight:700;color:var(--accent);font-size:15px}
+.slot p{color:var(--mute);font-size:15px}
+.screen{display:grid;gap:10px;min-width:0}
+.screen img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+.screen .how{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.phones img{max-width:300px;margin:0 auto}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:2px}
+.tbl{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15px}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:13px;color:var(--mute);font-weight:600;background:var(--accent-soft)}
+td:first-child{font-weight:600}
+.rules{background:var(--warn-soft);border-radius:12px;padding:16px 20px;display:grid;gap:8px}
+.rules h2{color:var(--warn);font-size:19px}
+footer{font-size:13px;color:var(--mute);border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:480px){.slot{grid-template-columns:1fr;gap:4px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">앤도버 선생님용 · 2026년 11월 · 미리 보기</div>
+    <h1>앤도버 생활기록 사용 가이드</h1>
+    <p class="lead">출결, 수업 기록, 코칭, 영상 숙제, 월간 평가를 한 프로그램에서 입력합니다. 학원 와이파이에 연결된 휴대폰이나 PC에서 아래 주소로 들어오세요.</p>
+    <nav class="toc" aria-label="목차">
+      <a href="../" style="background:var(--accent);color:var(--paper)">← 체험판으로</a>
+      <a href="#connect">처음 접속</a><a href="#day">하루 순서</a><a href="#screens">화면별 사용법</a><a href="#month">월간 할 일</a><a href="#help">이럴 땐</a>
+    </nav>
+  </header>
+
+  <section id="connect">
+    <h2>처음 접속하기</h2>
+    <div class="connect">
+      <div class="addr">
+        <code id="addr">http://192.168.0.15:8080</code>
+        <a class="btn" href="../">체험판 열기</a>
+        <button class="btn ghost" id="copy" type="button">주소 복사</button>
+      </div>
+      <ol class="num">
+        <li>휴대폰이나 PC를 <b>학원 와이파이</b>에 연결합니다. (데이터·집 와이파이에서는 열리지 않아요)</li>
+        <li>위 주소를 열면 바로 시작 화면이 나옵니다. 비밀번호는 없어요.</li>
+        <li>휴대폰은 <b>공유 → 홈 화면에 추가</b>를 해 두면 다음부터 앱처럼 바로 열립니다.</li>
+        <li>원어민 선생님은 오른쪽 위 <b>EN</b> 버튼을 누르면 영어 화면이 됩니다.</li>
+      </ol>
+      <p class="note">위 주소는 학원 와이파이에서만 열려요. 지금은 <b>체험판 열기</b>로 가상 학생 데이터를 눌러 볼 수 있어요. 입력하는 즉시 자동 저장됩니다. 저장 버튼을 따로 누를 필요가 없고, 다른 선생님 입력도 바로 보입니다.</p>
+    </div>
+  </section>
+
+  <section id="day">
+    <h2>하루 순서</h2>
+    <div class="day">
+      <div class="slot"><div class="when">수업 전</div><p><b>오늘 수업</b>에서 내 반을 누르고 오늘 수업계획을 확인합니다. 담당 선생님을 선택해 두세요.</p></div>
+      <div class="slot"><div class="when">수업 중</div><p>출결을 체크하고, 단어시험 점수와 수업 기록을 입력합니다.</p></div>
+      <div class="slot"><div class="when">수업 후</div><p><b>코칭</b>에서 숙제 확인 → 못 한 항목만 누르기 → 메시지 복사해서 보내기. <b>온라인·영상</b>에서 온라인 숙제와 Video 숙제 올림을 체크합니다.</p></div>
+      <div class="slot"><div class="when">퇴근 전</div><p><b>대시보드 → 입력률</b>에서 내 반에 빈 곳이 없는지 확인합니다.</p></div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <h2>화면별 사용법</h2>
+    <p class="note">아래 사진은 가상 학생(한서윤 Grace)으로 찍은 예시입니다.</p>
+
+    <div class="screen">
+      <h3>오늘 수업</h3>
+      <img src="img/today.jpg" alt="오늘 수업 화면: 반 선택, 날짜, 오늘의 수업계획" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li>위쪽 반 버튼으로 반을 고르고, 날짜 줄에서 다른 날로 이동합니다.</li>
+        <li>수업계획은 Annie가 올린 엑셀에서 자동으로 들어옵니다.</li>
+        <li>휴강·보강은 설정의 <b>휴강·보강</b>에서 관리합니다.</li>
+        <li>맨 아래 <b>단어시험</b>: 오늘 본 시험 종류(예: 교재 단어, Dictation)를 누르고 만점과 점수를 넣어요. 하루에 두 종류도 따로 넣을 수 있어요.</li>
+        <li>첫 점수가 <b>70% 미만</b>이면 빨간 숫자로 표시돼요. 재시험 점수는 옆 <b>재시험</b> 칸에 넣어요. 평균과 그래프에는 <b>첫 점수만</b> 들어가요.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>코칭</h3>
+      <img src="img/coach.jpg" alt="코칭 화면: 숙제 항목과 학부모 메시지" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li>숙제 항목은 수업계획에서 자동으로 만들어집니다. Metabook은 Unit·Day까지, Video 숙제와 SPC 인증 영상도 함께 들어가요.</li>
+        <li>처음엔 모두 <b>완료</b> 상태예요. <b>못 한 것만</b> 눌러 바꾸면 됩니다.</li>
+        <li>아래 <b>보낼 메시지</b>를 고쳐서 복사해 보내고, <b>이 반 코칭 기록 저장</b>을 누릅니다.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>온라인·영상 → Video Check</h3>
+      <img src="img/video.jpg" alt="Video Check 화면: 밴드 업로드 확인" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li>밴드에 영상 숙제를 올린 학생을 누르면 <b>올린 날짜</b>가 함께 기록됩니다.</li>
+        <li>안 올린 학생은 <b>개인 메시지</b>를 복사해서 보내세요.</li>
+        <li><b>온라인 숙제</b> 탭에서는 Trophy 9 등 사이트별 완료 여부를 체크합니다. Trophy 9 항목은 그날 Day에 맞는 레슨으로 자동으로 바뀝니다.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>월간 리포트 → 월간 평가 <span class="tag">매달</span></h3>
+      <img src="img/eval.jpg" alt="월간 평가 화면: 교재별 루브릭 1~4점" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li>맨 위에서 <b>한국인 선생님 · 한글</b> 또는 <b>원어민 선생님 · English</b>를 고릅니다.</li>
+        <li>한국인 선생님은 <b>Reading(Trophy 9 포함) · Grammar</b>, 원어민 선생님은 <b>Reading · Writing · Speaking</b>을 평가합니다. 흐린 교재는 다른 선생님 담당이에요.</li>
+        <li>영역마다 <b>1~4점</b>을 누르면 코멘트가 자동으로 써집니다. 4 우수 · 3 양호 · 2 노력 필요 · 1 지원 필요.</li>
+        <li><b>특이사항</b>은 매달, <b>선생님 관찰 · 다음 목표</b>는 정기평가 달(4월·10월)에만 적습니다.</li>
+        <li>교재는 그달 수업계획에서 자동으로 골라집니다. 빼려면 ×, 더하려면 <b>+ 교재 추가</b>.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>학생 기록</h3>
+      <img src="img/record.jpg" alt="학생 기록 화면: 학생 검색과 누적 기록" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li>이름 초성만 쳐도 찾습니다. 예: 한서윤 → <b>ㅎㅅㅇ</b>, 영어 이름도 됩니다.</li>
+        <li>달별 출결·숙제·단어시험·Voca King·월간 평가와 레벨·반 이력을 한 번에 봅니다.</li>
+        <li>상담 전에 이 화면을 열어 두면 편해요.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>대시보드</h3>
+      <img src="img/dash.jpg" alt="대시보드 화면: 입력률과 주의 학생" loading="lazy">
+      <div class="how"><ul class="plain">
+        <li><b>입력률</b>: 반별로 빠진 입력이 있는지 봅니다.</li>
+        <li><b>주의 학생</b>: 결석·숙제 미완료가 잦은 학생이 모입니다.</li>
+      </ul></div>
+    </div>
+
+    <div class="screen">
+      <h3>휴대폰에서는</h3>
+      <div class="phones">
+        <img src="img/phone-today.jpg" alt="휴대폰 오늘 수업 화면" loading="lazy">
+        <img src="img/phone-record.jpg" alt="휴대폰 학생 기록 화면" loading="lazy">
+      </div>
+      <p class="note">메뉴가 화면 아래쪽에 있어요. 기능은 PC와 똑같습니다.</p>
+    </div>
+  </section>
+
+  <section id="month">
+    <h2>주간·월간 할 일</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>언제</th><th>할 일</th><th>어디서</th></tr></thead>
+      <tbody>
+        <tr><td>매주</td><td>단어시험 점수 빠진 곳 확인</td><td>월간 리포트 → 단어점수</td></tr>
+        <tr><td>매달 Voca King 후</td><td>Voca King 점수 입력</td><td>월간 리포트 → Voca King</td></tr>
+        <tr><td>매달 말</td><td>월간 평가 점수 + 특이사항 입력</td><td>월간 리포트 → 월간 평가</td></tr>
+        <tr><td>4월 · 10월</td><td>정기평가 점수, 관찰 · 다음 목표 입력</td><td>월간 리포트 → 정기평가 · 월간 평가</td></tr>
+        <tr><td>필요할 때</td><td>엑셀로 받기</td><td>월간 리포트 → 엑셀 내려받기</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="help">
+    <h2>이럴 땐 이렇게</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>증상</th><th>해결</th></tr></thead>
+      <tbody>
+        <tr><td>주소가 안 열려요</td><td>학원 와이파이에 연결됐는지 확인하세요. 그래도 안 되면 Annie께 학원 컴퓨터가 켜져 있는지 여쭤 주세요.</td></tr>
+        <tr><td>오늘 수업계획이 비어 있어요</td><td>그 반 수업계획 엑셀이 아직 안 올라간 경우예요. Annie께 알려 주세요.</td></tr>
+        <tr><td>다른 선생님 입력이 안 보여요</td><td>화면을 아래로 당겨 새로고침하세요.</td></tr>
+        <tr><td>잘못 입력했어요</td><td>다시 고치면 덮어써집니다. 지운 기록은 Annie가 백업에서 되살릴 수 있어요.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="rules">
+    <h2>꼭 지켜 주세요</h2>
+    <ul class="plain">
+      <li>학원 컴퓨터의 <b>검은 창(프로그램)</b>을 끄지 마세요. 끄면 모두 접속이 끊깁니다.</li>
+      <li>학생 기록 화면을 학원 밖 사람에게 보여 주거나 캡처해 보내지 마세요.</li>
+      <li>설정(톱니바퀴) 메뉴는 Annie와 담당 선생님만 바꿔 주세요.</li>
+    </ul>
+  </div>
+
+  <footer>궁금한 점이나 불편한 점은 Annie께 말씀해 주세요. 모아서 프로그램에 반영합니다.</footer>
+</div>
+
+<script>
+
+document.getElementById('copy').addEventListener('click', function () {
+  var b = this, t = document.getElementById('addr').textContent;
+  var done = function () { b.textContent = '복사됨'; setTimeout(function () { b.textContent = '주소 복사'; }, 1500); };
+  try {
+    navigator.clipboard.writeText(t).then(done, function () { selectAddr(); });
+  } catch (e) { selectAddr(); }
+  function selectAddr() { var r = document.createRange(); r.selectNodeContents(document.getElementById('addr')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '길게 눌러 복사'; }
+});
+</script>
+</body>
+</html>
