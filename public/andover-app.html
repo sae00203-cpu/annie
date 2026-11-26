@@ -1472,7 +1472,7 @@ function srStats(s,a,b){
   srPeriods(s).forEach(function(p){
     var r=clipRange(p,a,b);if(!r)return;var cid=p.cid;
     var D=stuData(Object.assign({},s,{classId:cid}),r[0],r[1]);if(!D)return;
-    T.n+=D.n;T.present+=D.present;T.late+=D.late;T.absent+=D.absent;T.hwn+=D.hwn;T.hwd+=D.hwd;T.tests=T.tests.concat(D.tests);if(D.n)T.cls[cid]=(T.cls[cid]||0)+D.n;
+    T.n+=D.n;T.present+=D.present;T.late+=D.late;T.absent+=D.absent;T.hwn+=D.hwn;T.hwd+=D.hwd;T.tests=T.tests.concat(D.tests);if(D.n||D.tests.length)T.cls[cid]=(T.cls[cid]||0)+(D.n||0.5);
   });
   return T;
 }
@@ -1493,6 +1493,7 @@ function srChart(title,pts){
 function srMonths(s,enr){
   var ids=srIds(s),first='';
   S.recs.forEach(function(r){if(ids[r.classId]&&(!first||r.date<first))first=r.date});
+  S.tests.forEach(function(t){if(ids[t.classId]&&t.scores&&t.scores[s.id]!==undefined&&(!first||t.date<first))first=t.date});
   var st=enr&&/^\d{4}-\d\d/.test(enr)&&(!first||enr<first)?enr:first;
   if(!st)return [];
   var cur=today().slice(0,7),ym=st.slice(0,7),out=[],guard=0;

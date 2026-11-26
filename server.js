@@ -428,6 +428,70 @@ async function handle(req, res) {
         return sendJson(res, 200, { counts: countDocs(store.docs), backup: before });
       }
 
+      if (p === '/admin/merge-history') {
+        // 지난 단어시험 · Voca King 성적을 더해요. 지우거나 덮어쓰지 않아요 (이미 있는 학생 점수는 그대로).
+        const rows = Array.isArray(body.rows) ? body.rows : [];
+        if (!rows.length) throw new Error('추가할 기록이 없어요');
+        const norm = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+        const studs = [];
+        for (const k of Object.keys(store.docs)) {
+          if (!k.startsWith('students|') || store.docs[k].del) continue;
+          try { studs.push(JSON.parse(store.docs[k].json)); } catch (_) { /* 깨진 기록은 건너뜀 */ }
+        }
+        const byName = {};
+        studs.forEach(s => (byName[norm(s.name)] = byName[norm(s.name)] || []).push(s));
+        const pick = r => {
+          let c = byName[norm(r.name)] || [];
+          if (c.length > 1) { const e = c.filter(s => norm(s.ename) === norm(r.ename)); if (e.length) c = e; }
+          if (c.length > 1) { const a = c.filter(s => s.status !== 'left'); if (a.length) c = a; }
+          return c.length === 1 ? c[0] : (c.length > 1 ? 'many' : null);
+        };
+        // 그 날짜에 있던 반 (반 이동 이력이 있으면 따라감)
+        const classAt = (s, d) => {
+          const mv = (s.hist || []).filter(h => h.t === 'class' && h.to && h.d).sort((a, b) => (a.d < b.d ? -1 : 1));
+          const next = mv.find(h => h.d > d);
+          return (next && next.from) || s.classId;
+        };
+        const groups = new Map(), unmatched = {}, many = {};
+        let bad = 0;
+        for (const r of rows) {
+          if (!r || !/^(word|king)$/.test(r.kind) || !/^\d{4}-\d\d-\d\d$/.test(r.date) || typeof r.v !== 'number') { bad++; continue; }
+          const s = pick(r), label = String(r.name || '') + (r.ename ? ' (' + r.ename + ')' : '');
+          if (s === 'many') { many[label] = (many[label] || 0) + 1; continue; }
+          const cid = s && classAt(s, r.date);
+          if (!s || !cid) { unmatched[label] = (unmatched[label] || 0) + 1; continue; }
+          const id = cid + '_' + r.date + '_' + r.kind;
+          let g = groups.get(id);
+          if (!g) groups.set(id, g = { classId: cid, date: r.date, kind: r.kind, max: {}, range: new Set(), scores: {} });
+          g.scores[s.id] = r.v;
+          if (r.max) g.max[r.max] = (g.max[r.max] || 0) + 1;
+          if (r.range) g.range.add(String(r.range).slice(0, 40));
+        }
+        const before = backupNow('before-history-' + stampStr(new Date()) + '.json');
+        let t = nextTime(), made = 0, added = 0, kept = 0;
+        for (const [id, g] of groups) {
+          const key = 'tests|' + id, d0 = store.docs[key];
+          let doc = null;
+          if (d0 && !d0.del) { try { doc = JSON.parse(d0.json); } catch (_) { doc = null; } }
+          const mx = +((Object.entries(g.max).sort((a, b) => b[1] - a[1])[0] || [0])[0]) || 0;
+          if (!doc) { doc = { classId: g.classId, date: g.date, kind: g.kind, list: '', range: [...g.range].join(', ').slice(0, 100), max: mx, scores: {}, src: 'history' }; made++; }
+          doc.scores = doc.scores || {};
+          let ch = false;
+          for (const [sid, v] of Object.entries(g.scores)) {
+            if (doc.scores[sid] !== undefined) { kept++; continue; }
+            doc.scores[sid] = v; added++; ch = true;
+          }
+          if (!ch && d0 && !d0.del) continue;
+          if (!doc.max && mx) doc.max = mx;
+          doc.savedAt = new Date().toISOString();
+          store.docs[key] = { t: t++, by: by, del: false, json: JSON.stringify(doc) };
+        }
+        store.last = Math.max(store.last, t - 1);
+        saveStore();
+        const top = o => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([n, c]) => n + ' ' + c + '건');
+        return sendJson(res, 200, { made, added, kept, bad, unmatched: top(unmatched), many: top(many), backup: before });
+      }
+
       if (p === '/admin/restore') {
         let src;
         if (body.name) {
