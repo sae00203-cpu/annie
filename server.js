@@ -219,7 +219,7 @@ function setSessionCookie(res) {
 }
 
 /* ---------------- HTTP ---------------- */
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.jpg': 'image/jpeg' };
 
 function send(res, status, body, type, extra) {
   res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }, extra || {}));
@@ -519,6 +519,9 @@ async function handle(req, res) {
   }
 
   if (req.method === 'GET' && (p === '/standalone.js' || p.startsWith('/vendor/'))) return serveStatic(res, p.slice(1));
+  // 선생님 사용 가이드 (주소/guide)
+  if (req.method === 'GET' && (p === '/guide' || p === '/guide/')) return serveStatic(res, 'guide/index.html');
+  if (req.method === 'GET' && p.startsWith('/guide/img/')) return serveStatic(res, p.slice(1));
   if (p === '/favicon.ico') return send(res, 204, '');
   return send(res, 404, 'Not found');
 }
