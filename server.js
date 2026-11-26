@@ -522,6 +522,7 @@ async function handle(req, res) {
   // 선생님 사용 가이드 (주소/guide)
   if (req.method === 'GET' && (p === '/guide' || p === '/guide/')) return serveStatic(res, 'guide/index.html');
   if (req.method === 'GET' && p.startsWith('/guide/img/')) return serveStatic(res, p.slice(1));
+  if (req.method === 'GET' && p === '/report/letterhead.jpg') return serveStatic(res, p.slice(1));
   if (p === '/favicon.ico') return send(res, 204, '');
   return send(res, 404, 'Not found');
 }

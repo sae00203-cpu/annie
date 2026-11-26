@@ -601,6 +601,45 @@ h2{font-size:20px}
 @media (min-width:1000px){.smg li{grid-template-columns:minmax(0,1.4fr) minmax(0,2fr);align-items:center}.smg li .hint{grid-column:1/-1}}
 </style>
 <style id="ux-v2">
+.srmh .prbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+/* 학부모 리포트 (A4) */
+#prov{position:fixed;inset:0;z-index:200;background:#c9ced8;overflow:auto;padding:0 0 40px}
+#prov[hidden]{display:none}
+body.prmode{overflow:hidden}
+.prbar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink)}
+.prbar b{font-size:15px}.prhint{flex-basis:100%;margin:0;font-size:12.5px;color:var(--muted)}
+.prpages{display:grid;justify-content:center;gap:18px;padding:18px 8px}
+.prpage{width:794px;height:1123px;position:relative;background:#fff;color:#1b2333;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.prlh{position:absolute;inset:0;width:100%;height:100%;max-width:none}
+.prbody{position:absolute;top:164px;left:54px;right:54px;bottom:114px;display:flex;flex-direction:column;gap:.62em;font-size:11.5px;overflow:hidden}
+.prbody>*{flex-shrink:0}
+.prbody section h2{font-size:1.09em;margin:0 0 .4em;color:#5a2d9c;display:flex;align-items:center;gap:8px}.prbody section h2::after{content:"";flex:1;height:1px;background:#dfe3ec}
+.prtitle{display:flex;align-items:baseline;gap:10px;border-bottom:2px solid #5a2d9c;padding-bottom:.4em}.prtitle h1{margin:0;font-size:1.65em;color:#0b2454}.prtitle span{color:#5d6679}
+.prwho{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #dfe3ec;border-radius:9px;overflow:hidden}.prwho div{padding:.4em .9em;border-right:1px solid #dfe3ec;min-width:0}.prwho div:last-child{border-right:0}.prwho small{display:block;color:#5d6679;font-size:.9em}.prwho b{font-size:1.1em;overflow-wrap:anywhere}
+.prkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8em}.prk{border:1px solid #dfe3ec;border-radius:9px;padding:.55em .9em}.prk small{color:#5d6679}.prk b{display:block;font-size:1.75em;line-height:1.2;font-variant-numeric:tabular-nums}.prk i{font-style:normal;font-size:.92em;font-weight:700}.prsm{font-size:.6em;color:#5d6679}
+.pr-up{color:#1f7a4d;font-style:normal;font-weight:700}.pr-dn{color:#b4232a;font-style:normal;font-weight:700}.pr-eq{color:#5d6679;font-style:normal}
+.prtwo{display:grid;grid-template-columns:1.15fr 1fr;gap:1.2em;align-items:start}
+.prsvg{width:100%;height:auto;display:block;max-height:9.5em}
+.prleg{display:flex;flex-wrap:wrap;gap:.4em 1em;color:#5d6679;font-size:.9em;margin-top:.2em}
+.prt{border-collapse:collapse;width:100%;font-size:.96em}.prt th,.prt td{padding:.28em .6em;border-bottom:1px solid #dfe3ec;text-align:left}.prt th{color:#5d6679;font-weight:600;font-size:.92em;background:#f7f8fb}.prt .n{text-align:center;font-variant-numeric:tabular-nums}.prdim td{color:#5d6679}
+.prdots{display:inline-flex;gap:3px;vertical-align:middle}.prdots i{width:.78em;height:.78em;border-radius:50%;background:#e1e5ee;display:inline-block}.prdots i.on{background:#5a2d9c}.prlv{font-size:.95em}
+.prev{border-top:1px solid #dfe3ec}.prevr{display:grid;grid-template-columns:12.5em 1fr;border-bottom:1px solid #dfe3ec;padding:.3em 0}.prevb b{display:block}.prevb small{color:#5d6679;font-size:.88em}.previ{display:grid;grid-template-columns:1fr 1fr;gap:.15em 1.2em}.prevx{display:grid;grid-template-columns:1fr auto 4.6em;gap:.5em;align-items:center;font-size:.96em}.prevx em{font-style:normal}.prevx b{font-size:.92em}
+.prcm{border:1px solid #dfe3ec;border-radius:9px;padding:.5em 1em}.prcm+.prcm{margin-top:.5em}.prcm h3{margin:0 0 .2em;font-size:.95em;color:#5d6679;font-weight:600}.prcm p{margin:0;white-space:pre-line}.prcm p.pren{color:#5d6679;margin-top:.2em}.prnote{background:#fff8e8;border-color:#f0d9a8}
+.prmu{color:#5d6679;margin:0}
+.prsem{display:flex;flex-wrap:wrap;gap:.6em 1.6em;align-items:center;background:#f1edf9;border-radius:9px;padding:.55em 1em}.prsem small{color:#5d6679}.prpath{display:flex;flex-wrap:wrap;align-items:center;gap:.45em;font-weight:700}.prpath span{padding:.15em .8em;border-radius:999px;background:#fff;border:1px solid #dfe3ec}.prpath span.now{background:#5a2d9c;color:#fff;border-color:#5a2d9c}.prpath em{font-size:.92em}.praw{margin-left:auto;text-align:right;color:#b8860b;font-weight:700}
+.prclose{margin-top:auto;text-align:center;border-top:1px solid #dfe3ec;padding-top:.6em;color:#0b2454}.prclose p{margin:0;line-height:1.6}.prsign{display:flex;justify-content:flex-end;align-items:baseline;gap:1em;margin-top:.3em}.prsign span{color:#5d6679;font-size:.95em}.prsign b{font-size:1.17em;letter-spacing:.04em}
+@media (max-width:840px){.prpages{justify-content:start;overflow-x:auto}}
+@media print{
+  @page{size:A4;margin:0}
+  body.prmode>*:not(#prov){display:none!important}
+  html,body.prmode{margin:0!important;padding:0!important;background:#fff!important;overflow:visible;height:auto!important}
+  body.prmode #prov{position:static;overflow:visible;background:#fff;padding:0}
+  body.prmode .prbar{display:none}
+  body.prmode .prpages{display:block;padding:0}
+  body.prmode .prpage{box-shadow:none;margin:0;width:210mm;height:296mm;break-after:page;page-break-after:always;break-inside:avoid}
+  body.prmode .prpage:last-child{break-after:auto;page-break-after:auto}
+}
+
 .trow.need .sc:not(.rsc){color:var(--bad,#b4232a);border-color:var(--bad,#b4232a);font-weight:700}.trow.need .rsc{border-color:var(--warn);background:var(--warn-soft)}
 .lowsc{color:var(--bad,#b4232a);font-weight:700}
 .wtbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.wtbar .cg small{margin-left:4px;opacity:.75}.wtbar .wtadd{border-style:dashed;color:var(--accent)}
@@ -1600,7 +1639,7 @@ function srMonthHTML(s){
   var c=p?S.classes.find(function(x){return x.id===p.cid}):c0,rg=monthRange(ym,c||c0),D=null;
   if(p&&c){var r=clipRange(p,rg[0],rg[1]);if(r)D=stuData(Object.assign({},s,{classId:c.id}),r[0],r[1])}
   var m=memoGet(s.id,ym),has=D&&(D.n||D.tests.length||D.kings.length||D.onl.length||D.vid.length);
-  var o='<h3 class="sechd">월간 요약</h3><div class="srmh"><button type="button" class="nav" data-srym="-1" aria-label="이전 달">‹</button><b>'+esc(mLabel(ym,c||c0))+'</b><button type="button" class="nav" data-srym="1" aria-label="다음 달">›</button>'+(c&&c0&&c.id!==c0.id?'<span class="chip">'+esc(c.name)+' 반 때</span>':'')+'</div>';
+  var o='<h3 class="sechd">월간 요약</h3><div class="srmh"><button type="button" class="nav" data-srym="-1" aria-label="이전 달">‹</button><b>'+esc(mLabel(ym,c||c0))+'</b><button type="button" class="nav" data-srym="1" aria-label="다음 달">›</button>'+(c&&c0&&c.id!==c0.id?'<span class="chip">'+esc(c.name)+' 반 때</span>':'')+'<span class="prbtns"><button type="button" class="primary sm" data-pr="m">📄 학부모 월간 리포트</button><button type="button" class="ghost sm" data-pr="s">학기 성적표</button></span></div>';
   o+=has?'<div class="mgrid">'+stuCards(s,D)+'</div>':'<p class="hint">이 달에는 기록이 없어요.</p>';
   o+='<div class="srcm"><div class="cmpart"><div class="cmlab">월간 코멘트 · 한국인 선생님</div><p>'+(m.ko?esc(m.ko):'<span class="muted">아직 없어요</span>')+'</p></div><div class="cmpart"><div class="cmlab en">월간 코멘트 · 원어민 선생님</div><p>'+(m.en?esc(m.en):'<span class="muted">아직 없어요</span>')+'</p></div>'
     +'<p class="hint" style="margin:0">코멘트는 <button type="button" class="linkb" data-gocmt="1">월간 리포트 → 월간 코멘트</button>에서 적어요.</p></div>';
@@ -3351,7 +3390,7 @@ function evComment(s,o,lang){
 }
 /* 저장하면서 월간 코멘트(memo)도 새로 써요 → 학생 기록 · 정기평가 · 엑셀이 그대로 이어받아요 */
 function evPut(o){
-  o.savedAt=new Date().toISOString();var id=o.sid+'_'+o.ym;S.meval.set(id,o);write('meval/'+id,o,'q'+id);
+  o.savedAt=new Date().toISOString();try{var who=me();if(who){o.by=Object.assign({},o.by||{});o.by[evRole()]=who}}catch(_){}var id=o.sid+'_'+o.ym;S.meval.set(id,o);write('meval/'+id,o,'q'+id);
   var s=stuById(o.sid);if(s){memoSave(o.sid,o.ym,evComment(s,o,'ko'),'ko');memoSave(o.sid,o.ym,evComment(s,o,'en'),'en')}
 }
 function evDone(o,ids,role){if(!o)return false;var sc=o[role]||{};return ids.some(function(id){return (sc[id]||[]).some(function(v){return v>0})})}
@@ -3368,7 +3407,7 @@ function renderMrEval(){
     +(custom?'<button type="button" class="link" data-evauto="1">수업계획대로 되돌리기</button>':'')+'</div>'
     +'<p class="hint" style="margin:0">그달 수업계획의 교재로 자동으로 골랐어요. '+(role==='ko'?'한국인 선생님은 <b>Reading · Grammar</b>':'원어민 선생님은 <b>Reading · Writing · Speaking</b>')+'을 평가해요. 흐린 교재는 다른 선생님 담당이에요.</p>';
   var top='<div class="pad evtop">'+seg+books
-    +'<div class="evbar"><b>'+esc(c.name)+' · '+(role==='ko'?'평가 ':'done ')+done+'/'+list.length+'명</b>'+(mine.length&&list.length?'<button type="button" class="ghost sm" data-evfill="3">빈 칸 모두 3점으로</button>':'')+'<button type="button" class="primary sm" id="evSaveAll">'+(role==='ko'?'반 전체 저장':'Save all')+'</button></div>'
+    +'<div class="evbar"><b>'+esc(c.name)+' · '+(role==='ko'?'평가 ':'done ')+done+'/'+list.length+'명</b>'+(mine.length&&list.length?'<button type="button" class="ghost sm" data-evfill="3">빈 칸 모두 3점으로</button>':'')+'<button type="button" class="primary sm" id="evSaveAll">'+(role==='ko'?'반 전체 저장':'Save all')+'</button><button type="button" class="ghost sm" data-prcls="m">반 전체 PDF</button>'+(isExamMonth(ym)?'<button type="button" class="ghost sm" data-prcls="s">반 전체 학기 성적표</button>':'')+'</div>'
     +'<p class="evlegend">'+[4,3,2,1].map(function(v){return v+' '+LV_L[role][v-1]}).join(' · ')+'</p>'
     +(ex?'<p class="evex">📝 정기평가 달이에요. 학생마다 <b>관찰</b>과 <b>다음 목표</b>도 적어 주세요.</p>':'')+'</div>';
   if(!list.length){h.innerHTML=mrHead(sel,false,c)+top+'<div class="empty"><h2>이 반에 학생이 없어요</h2></div>';return}
@@ -4172,6 +4211,162 @@ function rollover(){
   lastToday=t;
   if(!document.activeElement||!$('v-manage').contains(document.activeElement)){ensureCid();renderAll()}
 }
+/* ---------- 학부모 리포트 (월간 · 학기) → A4 PDF ---------- */
+var PR_LH='report/letterhead.jpg';
+var PR_END='<p>프라게는 사고력과 언어 능력을 함께 키우는 글로벌 융합 영어 수업으로<br>스스로 생각하고 선택하는 자기주도적 인재로의 성장을 목표로 합니다.</p>';
+var PR_SIGN='프라게어학원 원장 드림';
+var PR_LV={4:'우수',3:'양호',2:'노력 필요',1:'지원 필요'};
+function prYmAdd(ym,n){var p=ym.split('-').map(Number),d=new Date(p[0],p[1]-1+n,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)}
+function prToday(){var d=new Date();return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일'}
+function prDots(v){var o='<span class="prdots">';for(var i=1;i<=4;i++)o+='<i'+(i<=v?' class="on"':'')+'></i>';return o+'</span>'}
+function prTrend(cur,prev,unit){if(cur==null||prev==null)return '<i class="pr-eq">&nbsp;</i>';var d=Math.round((cur-prev)*10)/10;if(d>0)return '<i class="pr-up">▲ '+d+unit+' 지난달 대비</i>';if(d<0)return '<i class="pr-dn">▼ '+Math.abs(d)+unit+' 지난달 대비</i>';return '<i class="pr-eq">— 지난달과 같음</i>'}
+function prClassAt(s,ym){
+  var c0=S.classes.find(function(x){return x.id===s.classId}),rg0=monthRange(ym,c0);
+  var P=srPeriods(s).filter(function(p){return (!p.from||p.from<=rg0[1])&&(!p.to||p.to>=rg0[0])}),p=P.length?P[P.length-1]:null;
+  var c=p?S.classes.find(function(x){return x.id===p.cid})||c0:c0;return {c:c,p:p,rg:monthRange(ym,c||c0)};
+}
+function prData(s,ym){
+  var X=prClassAt(s,ym),c=X.c,rg=X.rg,D=null;
+  if(X.p&&c){var r=clipRange(X.p,rg[0],rg[1]);if(r)D=stuData(Object.assign({},s,{classId:c.id}),r[0],r[1])}
+  return {c:c,rg:rg,D:D};
+}
+function prKpi(D){
+  if(!D)return {att:null,hw:null,word:null,king:null,kmx:0};
+  var P=srPct({n:D.n,present:D.present,late:D.late,tests:D.tests,hwn:D.hwn,hwd:D.hwd}),k=D.kings.length?D.kings[D.kings.length-1]:null;
+  return {att:P.att,hw:P.hw,word:P.word,king:k?k.v:null,kmx:k?k.mx:0};
+}
+function prLine(pts,W,H,col){
+  var L=34,R=10,T=10,B=22,n=pts.length,X=function(i){return L+(W-L-R)*(n>1?i/(n-1):0.5)},Y=function(v){return T+(H-T-B)*(1-(Math.max(50,Math.min(100,v))-50)/50)};
+  var ln=[],dots='';pts.forEach(function(v,i){if(v==null)return;ln.push(X(i).toFixed(1)+','+Y(v).toFixed(1));dots+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="3.2" fill="'+col+'"/>'});
+  return (ln.length>1?'<polyline points="'+ln.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2.4"/>':'')+dots;
+}
+function prChart(labels,series,W,H){
+  var L=34,R=10,T=10,B=22,n=labels.length,X=function(i){return L+(W-L-R)*(n>1?i/(n-1):0.5)},Y=function(v){return T+(H-T-B)*(1-(v-50)/50)};
+  var g=[100,75,50].map(function(v){return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#e4e7ef"/><text x="'+(L-5)+'" y="'+(Y(v)+3)+'" text-anchor="end" font-size="9" fill="#5d6679">'+v+'</text>'}).join('');
+  var step=Math.max(1,Math.ceil(n/6)),lab=labels.map(function(l,i){return (i%step===0||i===n-1)?'<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="#5d6679">'+esc(l)+'</text>':''}).join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="prsvg">'+g+series.map(function(s){return prLine(s.pts,W,H,s.col)}).join('')+lab+'</svg>';
+}
+var PR_COL=['#5a2d9c','#0f7b72','#b45309','#be185d'];
+function prBooks(c,rg,s){
+  var by={},order=[],spc=[];
+  S.plans.forEach(function(pl){if(pl.classId!==c.id||pl.date<rg[0]||pl.date>rg[1])return;
+    (pl.blocks||[]).forEach(function(b){if(!b.book)return;if(!by[b.book]){by[b.book]=[];order.push(b.book)}if(b.lesson)by[b.book].push([pl.date,b.lesson])});
+    if(pl.spc){var m=String(pl.spc).match(/Day\s*(\d+)/i);if(m)spc.push([pl.date,Number(m[1])])}});
+  var rows=order.map(function(b){var a=by[b].sort(function(x,y){return x[0]<y[0]?-1:1});var f=a.length?a[0][1]:'',l=a.length?a[a.length-1][1]:'';return [b,f===l?f:f+' – '+l]});
+  if(spc.length){spc.sort(function(x,y){return x[0]<y[0]?-1:1});var nv=0;S.vup.forEach(function(v){if(v.sid===s.id&&v.date>=rg[0]&&v.date<=rg[1])nv++});S.video.forEach(function(v){if(v.sid===s.id&&v.date>=rg[0]&&v.date<=rg[1])nv++});
+    rows.push(['SPC'+(c.spcLv?' '+c.spcLv:''),'Day '+spc[0][1]+' – '+spc[spc.length-1][1]+(nv?' · 영상 '+nv+'회 제출':'')])}
+  return rows;
+}
+function prEvalRows(c,ym,o){
+  if(!o)return [];
+  return classRubrics(c,ym).map(function(id){
+    var r=rubById(id);if(!r)return null;
+    var ko=o.ko&&o.ko[id],en=o.en&&o.en[id],a=(EVAL_ROLE.ko.indexOf(r.cat)>=0&&ko&&ko.some(Boolean))?ko:(en&&en.some(Boolean)?en:ko)||[];
+    var items=r.areas.map(function(ar,i){return a[i]?{n:ar.ko||ar.en,v:a[i]}:null}).filter(Boolean);
+    return items.length?{name:r.name,cat:CAT_L[r.cat]||r.cat,items:items}:null;
+  }).filter(Boolean);
+}
+function prSplit(txt){
+  var lines=String(txt||'').split('\n'),notes=[],keep=[];
+  lines.forEach(function(l,i){if(i===0&&(/^\[.*\]\s.*학생\s*$/.test(l)||/^Student:/.test(l)))return;var m=l.match(/^▪\s*(특이사항|Note):\s*(.*)$/);if(m){notes.push(m[2]);return}keep.push(l)});
+  return {body:keep.join('\n').replace(/^\n+|\n+$/g,''),notes:notes};
+}
+function prTeachers(c,o){var ko=(o&&o.by&&o.by.ko)||(c&&c.teacher)||'',en=(o&&o.by&&o.by.en)||'';return {ko:ko,en:en,all:[ko,en].filter(function(x,i,a){return x&&a.indexOf(x)===i}).join(' · ')}}
+function prHead(title,sub,cells){
+  return '<div class="prtitle"><h1>'+title+'</h1><span>'+sub+'</span></div><div class="prwho">'+cells.map(function(x){return '<div><small>'+x[0]+'</small><b>'+esc(x[1]||'–')+'</b></div>'}).join('')+'</div>';
+}
+function prPage(inner){return '<div class="prpage"><img class="prlh" src="'+PR_LH+'" alt=""><div class="prbody">'+inner+'<div class="prclose">'+PR_END+'<div class="prsign"><span>'+prToday()+'</span><b>'+PR_SIGN+'</b></div></div></div></div>'}
+
+function prMonthly(s,ym){
+  var X=prData(s,ym),c=X.c,D=X.D,K=prKpi(D),pv=prKpi(prData(s,prYmAdd(ym,-1)).D),o=evGet(s.id,ym),T=prTeachers(c,o),m=memoGet(s.id,ym);
+  var p=ym.split('-');
+  var o2=prHead('월간 학습 리포트','Monthly Learning Report · '+p[0]+'년 '+Number(p[1])+'월',[['학생',s.name+(s.ename?' '+s.ename:'')],['반 · 레벨',c?c.name:''],['담당 선생님',T.all],['기간',md(X.rg[0])+' – '+md(X.rg[1])]]);
+  var kc=function(l,v,u,tr){return '<div class="prk"><small>'+l+'</small><b>'+(v==null?'–':v+u)+'</b>'+tr+'</div>'};
+  o2+='<section><h2>이번 달 한눈에</h2><div class="prkpi">'+kc('출석률',K.att,'%',prTrend(K.att,pv.att,'%'))+kc('숙제 이행률',K.hw,'%',prTrend(K.hw,pv.hw,'%'))+kc('단어시험 평균',K.word,'%',prTrend(K.word,pv.word,'%'))
+    +'<div class="prk"><small>Voca King</small><b>'+(K.king==null?'–':K.king+(K.kmx?'<span class="prsm">/'+K.kmx+'</span>':''))+'</b>'+prTrend(K.king,pv.king,'점')+'</div></div></section>';
+  // 단어시험 그래프 (종류별 · 첫 점수)
+  var tests=(D?D.tests:[]).filter(function(t){return t.mx>0}),dates=[],types=[];
+  tests.forEach(function(t){if(dates.indexOf(t.d)<0)dates.push(t.d);var k=t.wn||'단어시험';if(types.indexOf(k)<0)types.push(k)});dates.sort();
+  var ser=types.map(function(k,i){var pts=dates.map(function(d){var x=tests.filter(function(t){return t.d===d&&(t.wn||'단어시험')===k});if(!x.length)return null;var a=0,b=0;x.forEach(function(t){a+=t.v;b+=t.mx});return Math.round(a/b*100)});
+    var a=0,b=0;tests.forEach(function(t){if((t.wn||'단어시험')===k){a+=t.v;b+=t.mx}});return {n:k,pts:pts,col:PR_COL[i%PR_COL.length],avg:b?Math.round(a/b*100):null}});
+  var perf=tests.filter(function(t){return t.v===t.mx}).length;
+  var wsec='<section><h2>단어시험</h2>'+(dates.length?prChart(dates.map(md),ser,360,110)+'<div class="prleg">'+ser.map(function(x){return '<span><b style="color:'+x.col+'">━</b> '+esc(x.n)+' 평균 '+x.avg+'%</span>'}).join('')+(perf?'<span>만점 '+perf+'회 🏆</span>':'')+'</div>':'<p class="prmu">이 달 단어시험 기록이 없어요.</p>')+'</section>';
+  var bk=c?prBooks(c,X.rg,s):[];
+  var bsec='<section><h2>이번 달 배운 교재</h2>'+(bk.length?'<table class="prt"><tr><th>교재</th><th>범위</th></tr>'+bk.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>'}).join('')+'</table>':'<p class="prmu">수업계획이 없어요.</p>')+'</section>';
+  o2+='<div class="prtwo">'+wsec+bsec+'</div>';
+  var ev=prEvalRows(c,ym,o);
+  if(ev.length)o2+='<section><h2>교재별 평가</h2><div class="prev">'+ev.map(function(r){return '<div class="prevr"><div class="prevb"><b>'+esc(r.name)+'</b><small>'+esc(r.cat)+'</small></div><div class="previ">'+r.items.map(function(x){return '<span class="prevx"><em>'+esc(x.n)+'</em>'+prDots(x.v)+'<b>'+PR_LV[x.v]+'</b></span>'}).join('')+'</div></div>'}).join('')+'</div><div class="prleg"><span>●●●● 우수</span><span>●●●○ 양호</span><span>●●○○ 노력 필요</span><span>●○○○ 지원 필요</span></div></section>';
+  var ko=prSplit(m.ko),en=prSplit(m.en),notes=ko.notes.concat(en.notes);
+  o2+='<section><h2>선생님 코멘트</h2>'+(ko.body?'<div class="prcm"><h3>한국인 선생님'+(T.ko?' · '+esc(T.ko):'')+'</h3><p>'+esc(ko.body)+'</p></div>':'')+(en.body?'<div class="prcm"><h3>Native Teacher'+(T.en?' · '+esc(T.en):'')+'</h3><p>'+esc(en.body)+'</p></div>':'')
+    +(!ko.body&&!en.body?'<p class="prmu">아직 코멘트가 없어요.</p>':'')+(notes.length?'<div class="prcm prnote"><h3>특이사항</h3><p>'+esc(notes.join('\n'))+'</p></div>':'')+'</section>';
+  return prPage(o2);
+}
+function prSemYm(ym){var E=examMonths();for(var i=0;i<12;i++){var y=prYmAdd(ym,-i);if(E.indexOf(Number(y.slice(5)))>=0)return y}return ym}
+function prSemester(s,ym0){
+  var ym=prSemYm(ym0),months=[],prev=[];for(var i=5;i>=0;i--){months.push(prYmAdd(ym,-i));prev.push(prYmAdd(ym,-i-6))}
+  var a=months[0]+'-01',b=calRange(ym)[1],pa=prev[0]+'-01',pb=calRange(prev[5])[1],c=S.classes.find(function(x){return x.id===s.classId});
+  var P=srPct(srStats(s,a,b)),PP=srPct(srStats(s,pa,pb));
+  var kAvg=function(x,y){var sv=0,sm=0,n=0;S.tests.forEach(function(t){if(t.kind!=='king'||t.date<x||t.date>y)return;var v=t.scores&&t.scores[s.id];if(typeof v==='number'&&v>=0&&Number(t.max)>0){sv+=v;sm+=Number(t.max);n++}});return n?{v:Math.round(sv/n*10)/10,mx:Math.round(sm/n)}:null};
+  var K=kAvg(a,b),KP=kAvg(pa,pb),o=evGet(s.id,ym),T=prTeachers(c,o),p=ym.split('-'),p0=months[0].split('-');
+  var rnds=roundList(),cur=null,old=null;rnds.forEach(function(r){var d=r.date||'';if(!cur&&d&&d<=b&&d>=a&&exGet(r.id,s.id))cur=r});
+  if(cur)rnds.forEach(function(r){if(!old&&(r.date||'')<(cur.date||'')&&exGet(r.id,s.id))old=r});
+  var o2=prHead('학기 성적표','Semester Report · '+p0[0]+'.'+Number(p0[1])+' – '+p[0]+'.'+Number(p[1]),[['학생',s.name+(s.ename?' '+s.ename:'')],['현재 반 · 레벨',c?c.name:''],['담당 선생님',T.all],['정기평가일',cur&&cur.date?cur.date.replace(/-/g,'.'):'–']]);
+  // 레벨 변화 · 수상
+  var mv=(s.hist||[]).filter(function(x){return x.d>=a&&x.d<=b&&(x.t==='class'||x.t==='level')}).sort(function(x,y){return x.d<y.d?-1:1});
+  var aw=(s.awards||[]).filter(function(x){return x.d>=a&&x.d<=b});
+  o2+='<div class="prsem"><div><small>이번 학기 레벨 · 반</small><div class="prpath">'+(mv.length?mv.map(function(x){var t=String(x.v||'').split('→').map(function(z){return z.trim()});return t.length>1?'<span>'+esc(t[0])+'</span>→<span class="now">'+esc(t[1])+'</span><em class="pr-up">'+(KIND_L[x.kind||moveKind(x.from,x.to)]||'반 이동')+' ('+Number(x.d.slice(5,7))+'월)</em>':'<span>'+esc(x.v||'')+'</span>'}).join(''):'<span class="now">'+esc(c?c.name:'')+'</span>')+'</div></div>'
+    +(aw.length?'<div class="praw"><small>수상</small>'+aw.map(function(x){return '<div>🏆 '+esc(x.n)+(x.r?' '+esc(x.r):'')+'</div>'}).join('')+'</div>':'')+'</div>';
+  // 정기평가
+  var exRow=function(r,e,dim){var tid=Object.keys(e.exams||{})[0],t=tid?etype(tid):null,ex=t?e.exams[tid]:null,tt=t?exTot(t,ex):null,iv=e.iv&&e.iv.sc?Object.keys(e.iv.sc).map(function(k){return e.iv.sc[k]}).filter(function(v){return typeof v==='number'})[0]:null;
+    return {name:r.name,type:t?t.name:'',items:t?t.items:[],sc:ex?ex.sc||{}:{},avg:tt?tt.avg:null,lv:ex&&ex.lv||'',iv:iv,dim:dim}};
+  if(cur){var A=exRow(cur,exGet(cur.id,s.id)),B=old?exRow(old,exGet(old.id,s.id),true):null,items=A.items;
+    var cell=function(v){return typeof v==='number'?v:'–'},dl=function(x,y){if(typeof x!=='number'||typeof y!=='number')return '';var d=Math.round((x-y)*10)/10;return d>0?'<span class="pr-up">▲ '+d+'</span>':d<0?'<span class="pr-dn">▼ '+Math.abs(d)+'</span>':'<span class="pr-eq">—</span>'};
+    o2+='<section><h2>정기평가 결과</h2><table class="prt"><tr><th>시험</th>'+items.map(function(i){return '<th class="n">'+esc(i)+'</th>'}).join('')+'<th class="n">평균</th><th class="n">레벨</th><th class="n">인터뷰</th></tr>'
+      +[A,B].filter(Boolean).map(function(R){return '<tr'+(R.dim?' class="prdim"':'')+'><td><b>'+esc(R.name)+'</b> · '+esc(R.type)+'</td>'+items.map(function(i){return '<td class="n">'+cell(R.sc[i])+'</td>'}).join('')+'<td class="n">'+cell(R.avg)+'</td><td class="n">'+esc(R.lv||'–')+'</td><td class="n">'+cell(R.iv)+'</td></tr>'}).join('')
+      +(B?'<tr><td>변화</td>'+items.map(function(i){return '<td class="n">'+dl(A.sc[i],B.sc[i])+'</td>'}).join('')+'<td class="n">'+dl(A.avg,B.avg)+'</td><td class="n"></td><td class="n">'+dl(A.iv,B.iv)+'</td></tr>':'')+'</table></section>';
+  }
+  // 학습 흐름
+  var M=months.map(function(y){var r=calRange(y);return srPct(srStats(s,r[0],r[1]))});
+  var ser=[{n:'출석률',pts:M.map(function(x){return x.att}),col:PR_COL[0]},{n:'숙제 이행률',pts:M.map(function(x){return x.hw}),col:PR_COL[1]},{n:'단어시험 평균',pts:M.map(function(x){return x.word}),col:PR_COL[2]}];
+  var tr=function(l,col,x,y,u){return '<tr><td>'+(col?'<b style="color:'+col+'">━</b> ':'')+l+'</td><td class="n"><b>'+(x==null?'–':x+u)+'</b></td><td class="n">'+(y==null?'–':y+u)+'</td></tr>'};
+  o2+='<section><h2>학기 동안의 학습 흐름</h2><div class="prtwo" style="grid-template-columns:1.4fr 1fr">'+prChart(months.map(function(y){return Number(y.slice(5))+'월'}),ser,400,130)
+    +'<table class="prt"><tr><th>학기 평균</th><th class="n">이번 학기</th><th class="n">지난 학기</th></tr>'+tr('출석률',PR_COL[0],P.att,PP.att,'%')+tr('숙제 이행률',PR_COL[1],P.hw,PP.hw,'%')+tr('단어시험 평균',PR_COL[2],P.word,PP.word,'%')
+    +'<tr><td>Voca King 평균</td><td class="n"><b>'+(K?K.v+'/'+K.mx:'–')+'</b></td><td class="n">'+(KP?KP.v+'/'+KP.mx:'–')+'</td></tr></table></div></section>';
+  // 영역별 성취 (학기 평균)
+  var CATS=[['reading','Reading'],['grammar','Grammar'],['writing','Writing'],['speaking','Speaking']],acc={};
+  months.forEach(function(y){var e=evGet(s.id,y);if(!e)return;var cc=S.classes.find(function(x){return x.id===e.classId})||c;if(!cc)return;
+    classRubrics(cc,y).forEach(function(id){var r=rubById(id);if(!r)return;var arr=(EVAL_ROLE.ko.indexOf(r.cat)>=0&&e.ko&&e.ko[id]&&e.ko[id].some(Boolean))?e.ko[id]:(e.en&&e.en[id])||[];
+      var A2=acc[r.cat]||(acc[r.cat]={sum:0,n:0,books:[]});arr.slice(0,r.areas.length).forEach(function(v){if(v){A2.sum+=v;A2.n++}});if(arr.some(Boolean)&&A2.books.indexOf(r.name)<0)A2.books.push(r.name)})});
+  var ar=CATS.filter(function(x){return acc[x[0]]&&acc[x[0]].n});
+  if(ar.length)o2+='<section><h2>영역별 성취 (학기 평균)</h2><table class="prt"><tr><th>영역</th><th>평가</th><th>이번 학기 교재</th></tr>'+ar.map(function(x){var A3=acc[x[0]],v=Math.max(1,Math.min(4,Math.round(A3.sum/A3.n)));return '<tr><td>'+x[1]+'</td><td>'+prDots(v)+' <b class="prlv">'+PR_LV[v]+'</b></td><td>'+esc(A3.books.join(' · '))+'</td></tr>'}).join('')+'</table></section>';
+  // 관찰 · 목표
+  var ob=o&&o.obs||{},gl=o&&o.goal||{},bx=function(h,k,e){return '<div class="prcm"><h3>'+h+'</h3>'+(k?'<p>'+esc(k)+'</p>':'')+(e?'<p class="pren">'+esc(e)+'</p>':'')+(!k&&!e?'<p class="prmu">–</p>':'')+'</div>'};
+  o2+='<section><h2>선생님 관찰과 다음 목표</h2><div class="prtwo" style="grid-template-columns:1fr 1fr">'+bx('선생님 관찰 · Teacher\'s Observation',ob.ko,ob.en)+bx('다음 학기 목표 · Next Goals',gl.ko,gl.en)+'</div></section>';
+  return prPage(o2);
+}
+function prOpen(pages,title){
+  var ov=$('prov');if(!ov){ov=document.createElement('div');ov.id='prov';document.body.appendChild(ov)}
+  ov.innerHTML='<div class="prbar"><b>'+esc(title)+'</b><span class="muted">'+pages.length+'장</span><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">PDF로 저장을 누르고, 인쇄 창에서 대상(프린터)을 <b>PDF로 저장</b>으로 고르세요. 휴대폰은 공유 → PDF로 저장.</p></div><div class="prpages">'+pages.join('')+'</div>';
+  ov.hidden=false;document.body.classList.add('prmode');
+  var imgs=ov.querySelectorAll('img.prlh'),fit=function(){ov.querySelectorAll('.prbody').forEach(function(b){var f=11.5;b.style.fontSize=f+'px';while(b.scrollHeight>b.clientHeight+1&&f>7.6){f-=0.3;b.style.fontSize=f+'px'}})};
+  fit();setTimeout(fit,300);
+  ov.scrollTop=0;
+}
+function prClose(){var ov=$('prov');if(ov){ov.hidden=true;ov.innerHTML=''}document.body.classList.remove('prmode')}
+document.addEventListener('click',function(e){
+  var t=e.target;if(!t.closest)return;
+  if(t.closest('#prClose')){prClose();return}
+  if(t.closest('#prPdf')){try{window.print()}catch(_){toast('이 화면에서는 PDF로 저장할 수 없어요')}return}
+  var b=t.closest('[data-pr]');
+  if(b){var s=stuById(S.srSel);if(!s)return;var ym=S.srYm||S.mr.month;
+    if(b.dataset.pr==='m')prOpen([prMonthly(s,ym)],s.name+' · 월간 학습 리포트');
+    else prOpen([prSemester(s,ym)],s.name+' · 학기 성적표 ('+prSemYm(ym).replace('-','년 ')+'월)');return}
+  var cp=t.closest('[data-prcls]');
+  if(cp){var c=cls();if(!c)return;var ym2=S.mr.month,L=roster(c);if(!L.length){toast('이 반에 학생이 없어요');return}
+    var sem=cp.dataset.prcls==='s';prOpen(L.map(function(s){return sem?prSemester(s,ym2):prMonthly(s,ym2)}),c.name+' · '+(sem?'학기 성적표':'월간 학습 리포트')+' (반 전체)');return}
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('prmode'))prClose()});
+
 setInterval(rollover,60000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)rollover()});
 window.addEventListener('focus',rollover);
