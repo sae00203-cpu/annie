@@ -601,6 +601,7 @@ h2{font-size:20px}
 @media (min-width:1000px){.smg li{grid-template-columns:minmax(0,1.4fr) minmax(0,2fr);align-items:center}.smg li .hint{grid-column:1/-1}}
 </style>
 <style id="ux-v2">
+.tmx{width:56px;margin-top:3px;padding:3px 4px;font:inherit;font-size:12px;text-align:center;border:1px dashed var(--line);border-radius:6px;background:var(--surface);color:inherit}
 /* ===== 화면 정리 v2: 한눈에 보이게 (스타일만 덧붙임, 기능 코드는 그대로) ===== */
 
 /* 1. 메뉴 아이콘 */
@@ -3081,14 +3082,14 @@ function allTestsHTML(kind){
   var nrec=0,np=0,sumAll=0,mxAll=0,kings=0;
   var tabs=G.map(function(g){
     var c=g.c;nrec+=g.recs.length;
-    var head='<tr><th>학생</th>'+g.recs.map(function(t){return '<th class="c" title="'+esc(t.range||'')+'">'+md(t.date)+(Number(t.max)?'<br><small>/'+t.max+'</small>':'')+'</th>'}).join('')+'<th>평균</th>'+(kind==='king'?'<th>🏆</th>':'')+'</tr>';
+    var head='<tr><th>학생</th>'+g.recs.map(function(t){return '<th class="c" title="'+esc(t.range||'')+'">'+md(t.date)+(Number(t.max)?'<br><small>/'+t.max+'</small>':'<br><input class="tmx" type="number" min="1" inputmode="numeric" placeholder="만점" aria-label="'+md(t.date)+' 만점" data-tmax="'+esc(t.classId+'|'+t.date+'|'+t.kind)+'">')+'</th>'}).join('')+'<th>평균</th>'+(kind==='king'?'<th>🏆</th>':'')+'</tr>';
     var body=g.stu.map(function(s){
       var sm=0,mx=0,pf=0,cnt=0;
       var cells=g.recs.map(function(t){
         var v=t.scores[s.id],m=Number(t.max)||0;
         if(v===undefined)return '<td class="c off">–</td>';
         if(v===-1)return '<td class="c off">결</td>';
-        sm+=v;mx+=m;cnt++;var perf=m>0&&v===m;if(perf)pf++;
+        if(m>0){sm+=v;mx+=m}cnt++;var perf=m>0&&v===m;if(perf)pf++;
         return '<td class="c'+(perf?' ok':'')+'">'+v+(perf?'🏆':'')+'</td>';
       }).join('');
       np+=cnt;sumAll+=sm;mxAll+=mx;kings+=pf;
@@ -3098,8 +3099,18 @@ function allTestsHTML(kind){
     return '<section class="rs" style="padding:12px 0"><h3>'+esc(c.name)+'<small>'+esc(c.teacher||'')+' · '+g.recs.length+'회'+(!S.mr.all&&offCal(c,S.mr.month)?' · '+md(trange(c)[0])+'~'+md(trange(c)[1]):'')+(kind==='king'&&c.vocab&&c.vocab.list?' · '+esc(c.vocab.list):'')+'</small></h3><div class="tw"><table class="rt mt"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+(rngs?'<p class="hint">범위: '+rngs+'</p>':'')+'</section>';
   }).join('');
   var chips='<div class="chips" style="border:1px solid var(--line);border-radius:10px"><span class="chip"><b>'+G.length+'</b>반</span><span class="chip"><b>'+nrec+'</b>기록</span>'+(mxAll?'<span class="chip ok"><b>'+Math.round(sumAll/mxAll*100)+'%</b>전체 평균</span>':'')+(kind==='king'&&kings?'<span class="chip warn has"><b>🏆 '+kings+'</b>만점</span>':'')+'</div>';
-  return chips+tabs+XLHINT;
+  var nmx=0;G.forEach(function(g){g.recs.forEach(function(t){if(!Number(t.max))nmx++})});
+  var mxh=nmx?'<p class="hint">만점이 비어 있는 시험이 '+nmx+'회 있어요. 날짜 아래 칸에 만점을 넣으면 평균 %와 학생 기록 그래프에 들어가요.</p>':'';
+  return chips+mxh+tabs+XLHINT;
 }
+document.addEventListener('change',function(e){
+  var t=e.target;if(!t.matches||!t.matches('[data-tmax]'))return;
+  var a=t.dataset.tmax.split('|'),v=Math.round(Number(t.value));if(!(v>0))return;
+  var r=tGet({id:a[0]},a[1],a[2]);if(!r)return;
+  var hi=0;Object.keys(r.scores||{}).forEach(function(k){if(r.scores[k]>hi)hi=r.scores[k]});
+  if(hi>v){toast('가장 높은 점수('+hi+'점)보다 만점이 작아요');t.value='';return}
+  r=Object.assign({},r,{max:v});tPut(r);toast(md(a[1])+' 만점 '+v+'점으로 저장했어요');renderAll();
+});
 function renderMrWt(){
   $('v-mr').innerHTML=mrHead('',true)+'<div class="pad" style="display:grid;gap:10px">'+allTestsHTML('word')+'<p class="hint">점수 입력은 ‘Today\'s Class’ 탭 맨 아래에서 해요. 학생 이름을 누르면 학생별 요약으로 가요.</p></div>';
 }
