@@ -3720,7 +3720,7 @@ function renderMrEval(){
     +(custom?'<button type="button" class="link" data-evauto="1">수업계획대로 되돌리기</button>':'')+'</div>'
     +'<p class="hint" style="margin:0">그달 수업계획의 교재로 자동으로 골랐어요. '+(role==='ko'?'한국인 선생님은 <b>Reading · Grammar</b>':'원어민 선생님은 <b>Reading · Writing · Speaking</b>')+'을 평가해요. 흐린 교재는 다른 선생님 담당이에요.</p>';
   var top='<div class="pad evtop">'+seg+books
-    +'<div class="evbar"><b>'+esc(c.name)+' · '+(role==='ko'?'평가 ':'done ')+done+'/'+list.length+'명</b>'+(mine.length&&list.length?'<button type="button" class="ghost sm" data-evfill="3">빈 칸 모두 3점으로</button>':'')+'<button type="button" class="ghost sm" id="evCopyAll">'+(role==='ko'?'반 전체 한글 코멘트 복사':'Copy all English comments')+'</button></div>'
+    +'<div class="evbar"><b>'+esc(c.name)+' · '+(role==='ko'?'평가 ':'done ')+done+'/'+list.length+'명</b>'+(mine.length&&list.length?'<button type="button" class="ghost sm" data-evfill="3">빈 칸 모두 3점으로</button>':'')+'<button type="button" class="primary sm" id="evSaveAll">'+(role==='ko'?'반 전체 저장':'Save all')+'</button></div>'
     +'<p class="evlegend">'+[4,3,2,1].map(function(v){return v+' '+LV_L[role][v-1]}).join(' · ')+'</p>'
     +(ex?'<p class="evex">📝 정기평가 달이에요. 학생마다 <b>관찰</b>과 <b>다음 목표</b>도 적어 주세요.</p>':'')+'</div>';
   if(!list.length){h.innerHTML=mrHead(sel,false,c)+top+'<div class="empty"><h2>이 반에 학생이 없어요</h2></div>';return}
@@ -3735,7 +3735,7 @@ function renderMrEval(){
             return '<div class="evrow"><span class="evan">'+esc(role==='ko'?ar.ko:ar.en)+'</span><span class="evb">'+[4,3,2,1].map(function(v){return '<button type="button" class="evs s'+v+(cur===v?' on':'')+'" data-evs="'+esc(s.id)+'|'+esc(id)+'|'+i+'|'+v+'" title="'+esc(txt[v-1]||'')+'" aria-pressed="'+(cur===v)+'"><b>'+v+'</b><small>'+LV[v-1]+'</small></button>'}).join('')+'</span></div>'}).join('')+'</div>'}).join('')
       +(ex?'<input class="tx evtx" data-evtx="obs|'+esc(s.id)+'" maxlength="300" placeholder="'+ph.obs+'" value="'+esc(((o&&o.obs)||{})[role]||'')+'"><input class="tx evtx" data-evtx="goal|'+esc(s.id)+'" maxlength="200" placeholder="'+ph.goal+'" value="'+esc(((o&&o.goal)||{})[role]||'')+'">':'')
       +'<input class="tx evtx" data-evtx="note|'+esc(s.id)+'" maxlength="300" placeholder="'+ph.note+'" value="'+esc(((o&&o.note)||{})[role]||'')+'">'
-      +'<div class="evout"><textarea class="cmsg" id="evout_'+esc(s.id)+'" readonly placeholder="'+(role==='ko'?'점수를 고르면 코멘트가 여기에 만들어져요':'Pick scores and the comment appears here')+'">'+esc(evComment(s,o,role))+'</textarea><button type="button" class="ghost sm" data-evcopy="'+esc(s.id)+'">복사</button></div></section>';
+      +'<div class="evout"><textarea class="cmsg" id="evout_'+esc(s.id)+'" readonly placeholder="'+(role==='ko'?'점수를 고르면 코멘트가 여기에 만들어져요':'Pick scores and the comment appears here')+'">'+esc(evComment(s,o,role))+'</textarea><span class="muted evsaved">'+(o&&o.savedAt?(role==='ko'?'학생 기록에 저장됨 · ':'Saved to Student Record · ')+hhmm(o.savedAt):'')+'</span></div></section>';
   }).join('');
   h.innerHTML=mrHead(sel,false,c)+top+'<div class="pad evlist">'+cards+'</div>';
 }
@@ -3754,7 +3754,8 @@ document.addEventListener('click',function(e){
   var rb=t.closest('[data-evrub]');if(rb&&c){var cur=classRubrics(c,ym).filter(function(id){return id!==rb.dataset.evrub});evMevcPut(c,ym,cur);renderMr();return}
   if(t.closest('[data-evauto]')&&c){var id0=c.id+'_'+ym;S.mevc.delete(id0);write('mevc/'+id0,null,'j'+id0);renderMr();return}
   var cp=t.closest('[data-evcopy]');if(cp){var ta=$('evout_'+cp.dataset.evcopy);if(ta&&ta.value)srCopy(ta.value);else toast('아직 코멘트가 없어요');return}
-  if(t.closest('#evCopyAll')&&c){var txt=roster(c).map(function(s){return evComment(s,evGet(s.id,ym),role)}).filter(Boolean).join('\n\n----------\n\n');if(txt)srCopy(txt);else toast('아직 코멘트가 없어요');return}
+  if(t.closest('#evSaveAll')&&c){var n=0,miss=0;roster(c).forEach(function(s){var o0=evGet(s.id,ym);if(o0&&evComment(s,o0,role)){evPut(evClone(s,ym));n++}else miss++});
+    toast(n?n+'명 코멘트를 학생 기록에 저장했어요'+(miss?' · 아직 평가 안 한 학생 '+miss+'명':''):'아직 평가한 학생이 없어요');renderMr();return}
 });
 document.addEventListener('change',function(e){var t=e.target;if(t.id!=='evAdd'||!t.value)return;var c=cls();if(!c)return;var cur=classRubrics(c,S.mr.month);if(cur.indexOf(t.value)<0)cur.push(t.value);evMevcPut(c,S.mr.month,cur);renderMr()});
 document.addEventListener('input',function(e){
