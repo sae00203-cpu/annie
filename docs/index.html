@@ -159,6 +159,163 @@
     put('memo', SID + '_' + ym, { sid: SID, ym: ym, text: CM[m][0], en: CM[m][1], savedAt: md.toISOString() });
   }
 
+
+  /* ===== 더 많은 예시: 지금 다니는 반 8개 · 학생 약 50명 · 최근 4개월 기록 (모두 가상) ===== */
+  (function () {
+    var FN = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '황', '안', '송', '홍', '유'];
+    var GN = [['도윤', 'Dylan'], ['서아', 'Sara'], ['하준', 'Hajun'], ['지우', 'Jiwoo'], ['은우', 'Eunwoo'], ['하윤', 'Hayun'], ['시우', 'Siwoo'], ['지아', 'Jia'], ['예준', 'Yejun'], ['수아', 'Sua'],
+      ['주원', 'Juwon'], ['아린', 'Arin'], ['건우', 'Gunwoo'], ['서윤', 'Seoyun'], ['우진', 'Woojin'], ['채원', 'Chaewon'], ['선우', 'Sunwoo'], ['지유', 'Jiyu'], ['연우', 'Yeonwoo'], ['다은', 'Daeun'],
+      ['현우', 'Hyunwoo'], ['소율', 'Soyul'], ['민준', 'Minjun'], ['예린', 'Yerin'], ['준서', 'Junseo'], ['하린', 'Harin'], ['유준', 'Yujun'], ['나은', 'Naeun'], ['재윤', 'Jaeyun'], ['윤서', 'Yunseo'],
+      ['이안', 'Ian'], ['로아', 'Roa'], ['태오', 'Theo'], ['리아', 'Ria'], ['도하', 'Doha'], ['시아', 'Sia'], ['지호', 'Jiho'], ['유나', 'Yuna'], ['민재', 'Minjae'], ['가윤', 'Gayun'],
+      ['서준', 'Seojun'], ['하은', 'Haeun'], ['정우', 'Jungwoo'], ['수빈', 'Subin'], ['승민', 'Seungmin'], ['예서', 'Yeseo'], ['태윤', 'Taeyun'], ['아윤', 'Ayun'], ['지환', 'Jihwan'], ['다인', 'Dain']];
+    var EN = ['Chloe', 'Ethan', 'Olivia', 'Lucas', 'Emma', 'Noah', 'Mia', 'Leo', 'Ella', 'Ryan', 'Lily', 'Daniel', 'Grace', 'Jake', 'Amy', 'Ben', 'Sophie', 'Max', 'Zoe', 'Sam'];
+    var K = [
+      { id: 'cx1', name: 'G2', t: 'Lucy T.', dow: [6], time: '10:00', books: ['Phonics Show 2', 'I Can Speak English 1'], n: 5, gr: '초1', lv: 0.70 },
+      { id: 'cx2', name: 'A1b-2 (월수금 3:30)', t: 'Lucy T.', dow: [1, 3, 5], time: '3:30', books: ['Wonderskills Basic 3', 'Grammar Start 2'], n: 7, gr: '초3', lv: 0.74, spc: 'Orange' },
+      { id: 'cx3', name: 'A2a-1 (화목 4:35)', t: 'Ben T.', dow: [2, 4], time: '4:35', books: ['Wonder Skills Intermediate 1', 'Grammar Point 1'], n: 8, gr: '초4', lv: 0.76, spc: 'Yellow', coach: 3 },
+      { id: 'cx4', name: 'A2b-2 (월수금 5:40)', t: 'Kate T.', dow: [1, 3, 5], time: '5:40', books: ['Reading Juice Plus 1', 'Paragraph Writing'], n: 6, gr: '초4', lv: 0.78, spc: 'Yellow', site: 1 },
+      { id: 'cx5', name: 'A4a-1', t: 'Amy T.', dow: [2, 4], time: '5:40', books: ['Trophy 9 Our World 5A', 'Creative Journal', 'Grammar Point 3'], n: 7, gr: '초6', lv: 0.8, spc: 'Blue', site: 1, coach: 2 },
+      { id: 'cx6', name: 'F2a', t: 'Ben T.', dow: [1, 3, 5], time: '2:45', books: ['Into Reading 3', 'Master Journal'], n: 6, gr: '초3', lv: 0.84, spc: 'Sky Blue', site: 1 },
+      { id: 'cx7', name: 'M1b', t: 'Jay T.', dow: [2, 4], time: '7:00', books: ['Reading Juice Plus 3', 'Grammar Point 3'], n: 7, gr: '중1', lv: 0.75 },
+      { id: 'cx8', name: 'PMC', t: 'Jay T.', dow: [1, 3], time: '6:00', books: ['Reading Juice Plus 3', 'My Next Grammar 2'], n: 5, gr: '초6', lv: 0.77 },
+    ];
+    var from = addM(now, -4); from.setDate(1);
+    var gi = 0, pick = function (a) { return a[Math.floor(rnd() * a.length)]; };
+    var T9 = [['eBook (SK)', 'Vocabulary', 'Dictation'], ['eBook (SC)', 'Role Play', 'Storytelling'], ['eBook (IR)', 'Sentence Puzzle', 'Shadowing'], ['Grammar', 'Book Quiz', 'Book Report']];
+    var NOTE_H = ['문제집 일부만 풀어 옴', '단어 암기 덜 함', '오답 정리 안 함'], NOTE_H2 = ['집에 두고 옴', '깜빡함'];
+    var MEMO_KO = ['수업 태도가 성실하고 숙제를 꾸준히 해 와요.', '어휘력이 좋아지고 있어요. 문장 단위로 말하는 연습을 이어 가면 좋겠어요.', '이번 달 결석이 있어 진도 보충이 필요해요.', '발표에 자신감이 붙었어요. 단어시험 준비를 조금 더 하면 좋겠어요.', '쓰기 과제를 꼼꼼히 해 와요. 문법 실수를 줄여 가고 있어요.'];
+    var MEMO_EN = ['Works diligently and completes homework consistently.', 'Vocabulary is growing. Keep practicing speaking in full sentences.', 'Missed a few classes this month; some review is needed.', 'Speaks with more confidence. A little more word test preparation would help.', 'Writing tasks are careful and grammar mistakes are decreasing.'];
+    var RUB = ['trophy-9', 'our-world-4a', 'wonderskills-reading-basic', 'wonderskills-reading-intermediate', 'reading-juice-plus-1', 'reading-juice-plus-3', 'into-reading', 'phonics-show', 'grammar-point', 'creative-journal', 'master-journal', 'paragraph-writing', 'my-first-diary', 'speaking'];
+
+    K.forEach(function (c) {
+      put('classes', c.id, { id: c.id, name: c.name, teacher: c.t, dow: c.dow, time: c.time, spcLv: c.spc, sites: c.site ? ['Trophy 9'] : undefined, siteMode: c.site ? { 'Trophy 9': 'every' } : undefined,
+        vocab: { list: 'Voca King ' + c.name, range: 'Day 1-30', max: 50 }, key: c.name + '||' + c.time });
+      var roster = [];
+      for (var i = 0; i < c.n; i++) {
+        var g = GN[gi % GN.length], f = FN[(gi * 7 + 3) % FN.length]; gi++;
+        var en = rnd() < 0.5 ? g[1] : EN[gi % EN.length];
+        var s = { id: 'sx' + gi, name: f + g[0], ename: en, sg: '예시' + (rnd() < 0.5 ? '초' : '초') + ' ' + c.gr.replace(/^초|^중/, ''), classId: c.id, order: i, status: 'active',
+          coaching: i < (c.coach || 0), enrolledAt: ymd(addM(now, -(3 + Math.floor(rnd() * 30)))), ab: c.lv + (rnd() - 0.5) * 0.3 };
+        if (/^중/.test(c.gr)) s.sg = '예시중 1';
+        put('students', s.id, s); roster.push(s);
+      }
+      if (gi === 9) roster[2].status = 'active';
+      var unit = 1, day = 0, lastWeek = -1, mon = '', vi = 0;
+      for (var d = new Date(from); d < addD(now, 14); d = addD(d, 1)) {
+        if (c.dow.indexOf(d.getDay()) < 0 || closed(d)) continue;
+        var ds = ymd(d); day++; if (day % c.dow.length === 1 || c.dow.length === 1) unit++;
+        var bl = c.books.map(function (b, bi) { return bi === 0 ? { book: b, lesson: 'Unit ' + unit + ' Day ' + (((day - 1) % 4) + 1), hw: /Trophy|Our World|Into/.test(b) ? 'Metabook' : 'Workbook p.' + (unit * 4) }
+          : { book: b, lesson: 'Lesson ' + Math.ceil(unit / 2), hw: 'Practice ' + Math.ceil(unit / 2) }; });
+        put('plans', c.id + '_' + ds, { classId: c.id, date: ds, src: 'demo', blocks: bl, voca: 'Voca King ' + c.name + ' - Day ' + day, spc: c.spc ? 'Day ' + (((day - 1) % 72) + 1) : '', online: '', notice: '' });
+        if (d >= now) continue;
+        var rec = { classId: c.id, date: ds, att: {}, book: {}, hw: {}, note: {}, savedAt: d.toISOString() };
+        roster.forEach(function (s) {
+          var r = rnd(), weak = s.ab < 0.7;
+          if (r < (weak ? 0.07 : 0.025)) { rec.att[s.id] = 'absent'; rec.note[s.id] = { a: pick(REASON_A) }; return; }
+          if (r < (weak ? 0.13 : 0.06)) { rec.att[s.id] = 'late'; rec.note[s.id] = { a: pick(REASON_L) }; }
+          if (rnd() < (weak ? 0.08 : 0.03)) rec.book[s.id] = 'no';
+          var h = rnd(), ok = weak ? 0.72 : 0.9;
+          if (h > ok) { rec.hw[s.id] = h > ok + (1 - ok) * 0.6 ? 'none' : 'partial'; rec.note[s.id] = Object.assign(rec.note[s.id] || {}, { h: pick(h > ok + (1 - ok) * 0.6 ? NOTE_H2 : NOTE_H) }); }
+        });
+        put('daily', c.id + '_' + ds, rec);
+        var present = roster.filter(function (s) { return rec.att[s.id] !== 'absent'; });
+        // 단어시험: 매주 첫 수업 (종류별)
+        var wk = Math.floor(d / 6048e5);
+        if (wk !== lastWeek && c.name !== 'G2') {
+          lastWeek = wk;
+          var types = /^(M|PM)/.test(c.name) ? [['wbk', 30], ['wid', 20]] : /^(A3|A4|F)/.test(c.name) ? [['wbk', 20], ['wdc', 10]] : [['wbk', 10 + 5 * Math.floor(rnd() * 3)]];
+          types.forEach(function (tp) {
+            var mx = tp[1], sc = {}, re = {};
+            roster.forEach(function (s) { if (rec.att[s.id] === 'absent') return; var v = Math.round(clamp(s.ab + (rnd() - 0.5) * 0.3, 0.25, 1) * mx); sc[s.id] = v; if (v / mx < 0.7 && rnd() < 0.85) re[s.id] = Math.min(mx, v + Math.ceil(mx * (0.15 + rnd() * 0.2))); });
+            roster.forEach(function (s) { if (rec.att[s.id] === 'absent' && rnd() < 0.5) sc[s.id] = -1; });
+            put('tests', c.id + '_' + ds + '_word-' + tp[0], { classId: c.id, date: ds, kind: 'word', wt: tp[0], list: tp[0] === 'wbk' ? c.books[0] : '', range: 'Unit ' + unit, max: mx, scores: sc, re: re, savedAt: d.toISOString() });
+          });
+        }
+        // Voca King: 달마다 중순 첫 수업
+        var ym = ds.slice(0, 7);
+        if (ym !== mon && d.getDate() >= 13) {
+          mon = ym; var ks = {};
+          roster.forEach(function (s) { if (rec.att[s.id] === 'absent') return; ks[s.id] = Math.round(clamp(s.ab + 0.08 + (rnd() - 0.5) * 0.25, 0.3, 1) * 50); });
+          put('tests', c.id + '_' + ds + '_king', { classId: c.id, date: ds, kind: 'king', list: 'Voca King ' + c.name, range: 'Day ' + (1 + (day % 30)) + '-' + (10 + (day % 30)), max: 50, scores: ks, savedAt: d.toISOString() });
+        }
+        // 코칭 (최근 6주)
+        if (c.coach && now - d < 42 * 864e5) {
+          var items = [c.books[0] + ' ' + bl[0].lesson + (bl[0].hw === 'Metabook' ? ' Metabook' : ''), c.books[1] + ' ' + bl[1].hw];
+          if (c.spc) items.push('SPC ' + c.spc + ' Day ' + (((day - 1) % 72) + 1));
+          var x = {};
+          roster.filter(function (s) { return s.coaching; }).forEach(function (s) { var m = []; items.forEach(function (_, ii) { if (rnd() > (s.ab < 0.7 ? 0.75 : 0.9)) m.push(ii); }); if (m.length) x[s.id] = m; });
+          put('coach', c.id + '_' + ds, { classId: c.id, date: ds, items: items, x: x, skip: [], sent: {}, savedAt: d.toISOString() });
+        }
+        // 온라인 (Trophy 9 · 최근 5주)
+        if (c.site && now - d < 35 * 864e5) {
+          var ln = (((day - 1) % 4) + 1), it = T9[ln - 1], ox = {}, none = [];
+          roster.forEach(function (s) { if (rnd() < 0.06) { none.push(s.id); return; } var m = []; it.forEach(function (_, ii) { if (rnd() > (s.ab < 0.7 ? 0.7 : 0.9)) m.push(ii); }); if (m.length) ox[s.id] = m; });
+          put('online', c.id + '_' + ds, { classId: c.id, date: ds, site: 'Trophy 9', lesson: ln, items: it, x: ox, none: none, savedAt: d.toISOString() });
+        }
+        // 영상 숙제 (SPC 반 · 2주마다)
+        if (c.spc && day % 6 === 3 && now - d < 50 * 864e5) {
+          var aid = 'vx' + c.id + '_' + (vi++), title = c.books[0] + ' Unit ' + unit + ' Video';
+          put('vassign', aid, { id: aid, classId: c.id, title: title, date: ds });
+          roster.forEach(function (s) {
+            var r = rnd(), ud = addD(d, 1 + Math.floor(rnd() * 2)); if (ud > now) ud = now;
+            if (r < 0.45) { var sc2 = [0, 0, 0, 0, 0].map(function () { return 2 + Math.floor(rnd() * 3); }); put('video', aid + '_' + s.id, { id: aid + '_' + s.id, aid: aid, sid: s.id, classId: c.id, date: ds, scores: sc2, words: 'journey, island', comment: pick(['Great job! Clear voice and good eye contact.', 'Nice reading. Try to speak a little slower.', 'Good effort! Practice the new words once more.']), teacher: c.t, total: sc2.reduce(function (a, b) { return a + b; }, 0), savedAt: ud.toISOString() }); }
+            else if (r < 0.8) put('vup', aid + '_' + s.id, { id: aid + '_' + s.id, aid: aid, sid: s.id, classId: c.id, date: ymd(ud), savedAt: ud.toISOString() });
+          });
+        }
+      }
+      // 월간 평가 · 코멘트 (지난달, 일부 반은 이번 달도)
+      [1, 0].forEach(function (back) {
+        if (back === 0 && !/^(A2a|A4a)/.test(c.name)) return;
+        var md = addM(now, -back), ym = md.getFullYear() + '-' + pad(md.getMonth() + 1);
+        roster.forEach(function (s, si) {
+          if (back === 0 && si > 3) return;
+          var lv = function () { return clamp(Math.round(1 + s.ab * 3.2 + (rnd() - 0.5) * 1.2), 1, 4); };
+          var ko = {}, en = {};
+          RUB.forEach(function (id) { var a = [0, 0, 0, 0, 0, 0].map(lv); ko[id] = a; en[id] = a.map(function (v) { return clamp(v + (rnd() < 0.2 ? -1 : 0), 1, 4); }); });
+          var note = rnd() < 0.25 ? { ko: pick(['이번 달 감기로 두 번 결석했어요.', '말하기 대회 준비를 열심히 했어요.', '숙제 제출이 늦은 날이 있었어요.']), en: '' } : {};
+          put('meval', s.id + '_' + ym, { sid: s.id, ym: ym, classId: c.id, ko: ko, en: en, note: note, obs: {}, goal: {}, savedAt: md.toISOString() });
+          var k = Math.floor(rnd() * MEMO_KO.length);
+          put('memo', s.id + '_' + ym, { sid: s.id, ym: ym, text: MEMO_KO[k], en: MEMO_EN[k], savedAt: md.toISOString() });
+        });
+      });
+      // 정기평가 (최근 두 번)
+      ['rdemo5', 'rdemo6'].forEach(function (rid, ri) {
+        if (!docs['rounds|' + rid]) return;
+        var tp = docs['rounds|' + rid].types[0];
+        roster.forEach(function (s) {
+          var b = Math.round(s.ab * 100), ex = {}; ex[tp] = { sc: { Listening: clamp(b + Math.round((rnd() - 0.5) * 16), 30, 100), Reading: clamp(b + Math.round((rnd() - 0.5) * 16), 30, 100), LFM: clamp(b - 4 + Math.round((rnd() - 0.5) * 16), 30, 100) }, lv: 'Level ' + (2 + ri + Math.round(s.ab * 3)) };
+          put('exam', rid + '_' + s.id, { rid: rid, sid: s.id, classId: c.id, exams: ex, iv: { sc: { '점수': clamp(b + Math.round((rnd() - 0.5) * 10), 30, 100) }, lv: '', cm: '' }, comment: '', savedAt: docs['rounds|' + rid].date + 'T09:00:00.000Z' });
+        });
+      });
+    });
+
+    // 지금 반(A3a-1) 친구들도 코칭 · Voca King · 월간 평가를 조금 더
+    var cur = docs['classes|' + CUR.id]; cur.vocab = { list: 'Voca King A3a-1', range: 'Day 1-30', max: 50 };
+    docs['students|sdemo2'].coaching = true;
+    var all = [me].concat(mates);
+    for (var m2 = 11; m2 >= 0; m2--) {
+      var kd = addM(now, -m2); kd.setDate(15); while (CUR.dow.indexOf(kd.getDay()) < 0 || closed(kd)) kd = addD(kd, 1);
+      if (kd >= now || kd < CUR.from) continue;
+      var ks2 = {}; all.forEach(function (s, i) { ks2[s.id] = Math.round(clamp((i === 0 ? 0.82 + 0.015 * (11 - m2) : 0.7 + rnd() * 0.25) + (rnd() - 0.5) * 0.1, 0.3, 1) * 50); });
+      put('tests', CUR.id + '_' + ymd(kd) + '_king', { classId: CUR.id, date: ymd(kd), kind: 'king', list: 'Voca King A3a-1', range: 'Day ' + (m2 * 10 + 1) + '-' + (m2 * 10 + 10), max: 50, scores: ks2, savedAt: kd.toISOString() });
+    }
+    var lm = addM(now, -1), lym = lm.getFullYear() + '-' + pad(lm.getMonth() + 1);
+    all.forEach(function (s, i) {
+      var ko = {}, en = {}, base = i === 0 ? 3.6 : 2.6 + rnd();
+      RUB.forEach(function (id) { var a = [0, 0, 0, 0, 0, 0].map(function () { return clamp(Math.round(base + (rnd() - 0.5) * 1.2), 1, 4); }); ko[id] = a; en[id] = a.slice(); });
+      put('meval', s.id + '_' + lym, { sid: s.id, ym: lym, classId: CUR.id, ko: ko, en: en, note: i === 0 ? { ko: '말하기 대회에서 금상을 받았어요.', en: 'Won the gold prize at the speech contest.' } : {}, obs: {}, goal: {}, savedAt: lm.toISOString() });
+    });
+    // 코칭 (A3a-1, 최근 4주)
+    for (var cd = addD(now, -28); cd < now; cd = addD(cd, 1)) {
+      if (CUR.dow.indexOf(cd.getDay()) < 0 || closed(cd)) continue;
+      var cds = ymd(cd), pl = docs['plans|' + CUR.id + '_' + cds]; if (!pl) continue;
+      var its = [pl.blocks[0].book + ' ' + pl.blocks[0].lesson + ' Metabook', pl.blocks[1].book + ' ' + pl.blocks[1].hw, 'SPC Green ' + pl.spc.replace(' Video 찍기', '')];
+      var cx = {}; if (rnd() < 0.3) cx.sdemo2 = [1]; if (rnd() < 0.12) cx[SID] = [2];
+      put('coach', CUR.id + '_' + cds, { classId: CUR.id, date: cds, items: its, x: cx, skip: [], sent: {}, savedAt: cd.toISOString() });
+    }
+    docs['settings|main'].wtTypes.push({ id: 'wid', n: '숙어', lv: 'M, PM' });
+  })();
+
   /* ---- 서버 대신 이 페이지 안에서 동작하는 저장소 (google.script.run 과 같은 모양) ---- */
   var store = {}, last = 0;
   Object.keys(docs).forEach(function (k) { store[k] = { t: ++last, del: false, json: JSON.stringify(docs[k]) }; });
@@ -188,7 +345,7 @@
     var b = document.createElement('div');
     b.setAttribute('role', 'note');
     b.style.cssText = 'max-width:1360px;margin:0 auto 12px;padding:9px 14px;border-radius:10px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);font-size:13.5px;font-weight:600;line-height:1.45';
-    b.textContent = '체험용 예시 데이터예요. 실제 학생이 아니고, 입력한 내용은 새로고침하면 사라져요. 학생 기록에서 "ㅎㅅㅇ"을 검색하면 3년 기록을, 온라인·영상 → Video Check에서 영상 숙제 올림 확인을 볼 수 있어요.';
+    b.textContent = '체험용 예시 데이터예요 (가상의 반 9개 · 학생 약 55명). 실제 학생이 아니고, 입력한 내용은 새로고침하면 사라져요. 학생 기록에서 "ㅎㅅㅇ"을 검색하면 3년 기록을 볼 수 있어요. 오른쪽 위 ? 는 사용 가이드예요.';
     var app = document.querySelector('.app'); if (app) app.parentNode.insertBefore(b, app);
   });
 })();
