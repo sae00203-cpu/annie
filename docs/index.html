@@ -364,6 +364,7 @@
 .tcard .tgo::after{content:"열기 ▾"}.tcard[open] .tgo::after{content:"접기 ▴"}
 .tcard .tcb{padding:12px 14px 14px}
 .tleft{min-width:0}
+@media (max-width:999px){#v-today:not([hidden]){display:flex;flex-direction:column}#v-today>.tleft{display:contents}#v-today>.tleft>.tcard{order:1;margin:12px 12px 4px}#v-today>.actions{order:2}}
 @media (min-width:1000px){
   #v-today>.tleft{grid-column:1;grid-row:3 / span 40;border-right:1px solid var(--line);padding-bottom:16px}
   #v-today>.tleft>.plan{grid-column:auto;grid-row:auto;border-right:0;position:static}
