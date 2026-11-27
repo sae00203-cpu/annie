@@ -373,6 +373,12 @@
 
 </script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>앤도버 생활기록</title><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <style id="ux-tabs">
+/* 학부모 리포트 글꼴: 제목 주아 · 본문 고운돋움 (프로그램 안에 들어 있어 인터넷 없이도 돼요) */
+@font-face{font-family:"PR Jua";src:url(report/fonts/jua.ttf) format("truetype");font-display:block}
+@font-face{font-family:"PR Gowun";src:url(report/fonts/gowun-dodum.ttf) format("truetype");font-display:block}
+.prpage{font-family:"PR Gowun","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.prpage h1,.prpage h2,.prpage h3,.prpage .prk b,.prpage .prwho b,.prpage .prsign b,.prpage .prevb b,.prpage .prsem .prpath,.prpage .praw{font-family:"PR Jua","PR Gowun",sans-serif;font-weight:400}
+
 .prbody>.prcmb{margin-top:0}.prbody>.prsh{margin-bottom:-.3em}
 .prdoc{display:grid;gap:18px}
 .prdoc.big .prsvg{max-height:13em}
@@ -4928,6 +4934,7 @@ function prOpen(pages,title){
   ov.hidden=false;document.body.classList.add('prmode');
   var fit=function(){prPaginate(ov);var n=ov.querySelectorAll('.prpage').length,m=ov.querySelector('.prbar .muted');if(m)m.textContent=n+'장'};
   fit();setTimeout(fit,350);
+  try{if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('14px "PR Jua"'),document.fonts.load('14px "PR Gowun"')]).then(function(){setTimeout(fit,50)},function(){})}catch(_){}
   ov.scrollTop=0;
 }
 function prClose(){var ov=$('prov');if(ov){ov.hidden=true;ov.innerHTML=''}document.body.classList.remove('prmode')}

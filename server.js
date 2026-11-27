@@ -219,7 +219,7 @@ function setSessionCookie(res) {
 }
 
 /* ---------------- HTTP ---------------- */
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.jpg': 'image/jpeg' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.jpg': 'image/jpeg', '.ttf': 'font/ttf' };
 
 function send(res, status, body, type, extra) {
   res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }, extra || {}));
@@ -525,6 +525,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && p === '/guide/') return serveStatic(res, 'guide/index.html');
   if (req.method === 'GET' && p.startsWith('/guide/img/')) return serveStatic(res, p.slice(1));
   if (req.method === 'GET' && p === '/report/letterhead.jpg') return serveStatic(res, p.slice(1));
+  if (req.method === 'GET' && /^\/report\/fonts\/[a-z0-9-]+\.ttf$/.test(p)) return serveStatic(res, p.slice(1));
   if (p === '/favicon.ico') return send(res, 204, '');
   return send(res, 404, 'Not found');
 }
