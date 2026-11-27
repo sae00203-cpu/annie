@@ -23,7 +23,10 @@
     g.innerHTML = '<div class="bx">' + html + '</div>'; g.hidden = false; return g;
   }
   function ungate() { var g = document.getElementById('cg'); if (g) g.remove(); }
-  function whenBody(f) { if (document.body) f(); else document.addEventListener('DOMContentLoaded', f); }
+  var pending = null;
+  function whenBody(f) { pending = f; if (document.body) run(); }
+  function run() { if (pending && document.body) { var f = pending; pending = null; f(); } }
+  document.addEventListener('DOMContentLoaded', run);
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   if (!CFG || !CFG.apiKey || !window.firebase) {
@@ -49,6 +52,7 @@
   }
 
   /* ---------- 준비: 로그인 → 권한 확인 → 기록 불러오기 ---------- */
+  var flash = '';
   var readyRes, ready = new Promise(function (r) { readyRes = r; });
   function startSync() {
     return DOCS.get({ source: 'cache' }).then(function (q) { q.forEach(absorb); }, function () {}).then(function () {
@@ -96,9 +100,9 @@
   }
   whenBody(function () { gate('<h1>앤도버 생활기록</h1><p>불러오는 중…</p>'); });
   auth.onAuthStateChanged(function (u) {
-    if (!u) { if (unsub) { unsub(); unsub = null; } whenBody(function () { showLogin(''); }); return; }
+    if (!u) { if (unsub) { unsub(); unsub = null; } var fm = flash; flash = ''; whenBody(function () { showLogin(fm); }); return; }
     loadMe(u).then(function (m) {
-      if (!m) { auth.signOut(); whenBody(function () { showLogin('사용할 수 없는 계정이에요. Annie께 확인해 주세요.'); }); return; }
+      if (!m) { flash = '사용할 수 없는 계정이에요. Annie께 확인해 주세요.'; auth.signOut(); return; }
       if (m.role === 'claim') { whenBody(function () { showClaim(u); }); return; }
       me = m; try { localStorage.setItem('me', m.name); } catch (_) {}
       whenBody(function () { gate('<h1>앤도버 생활기록</h1><p>' + esc(m.name) + ' 선생님, 기록을 불러오는 중…</p>'); });
