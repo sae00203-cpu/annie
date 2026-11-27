@@ -1,0 +1,39 @@
+rules_version = '2';
+// 앤도버 생활기록 · Firestore 보안 규칙
+// ▶ 아래 ANNIE_EMAIL 을 관리자(Annie) 구글 이메일로 바꿔서 붙여 넣어 주세요.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function adminDoc() { return get(/databases/$(db)/documents/meta/admin); }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(db)/documents/meta/admin) && adminDoc().data.uid == request.auth.uid;
+    }
+    function isStaff() {
+      return isAdmin() || (signedIn()
+        && exists(/databases/$(db)/documents/staff/$(request.auth.uid))
+        && get(/databases/$(db)/documents/staff/$(request.auth.uid)).data.active == true);
+    }
+
+    // 관리자 등록: 처음 한 번, 정해 둔 이메일의 구글 계정만
+    match /meta/admin {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && !exists(/databases/$(db)/documents/meta/admin)
+        && request.resource.data.uid == request.auth.uid
+        && request.auth.token.email == 'ANNIE_EMAIL'
+        && request.auth.token.email_verified == true;
+      allow update, delete: if false;
+    }
+
+    // 선생님 계정 목록: 관리자만 만들고 고쳐요. 선생님은 자기 것만 읽어요.
+    match /staff/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow write: if isAdmin();
+    }
+
+    // 학원 기록: 관리자와 사용 중인 선생님만
+    match /docs/{id} {
+      allow read, write: if isStaff();
+    }
+  }
+}
