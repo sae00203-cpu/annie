@@ -1,0 +1,23 @@
+# 프로그램을 고쳐서 올리면 andover-record.web.app 에 자동으로 반영해요.
+# 필요한 것: GitHub 저장소 Settings → Secrets and variables → Actions 에
+#   FIREBASE_SERVICE_ACCOUNT (Firebase 서비스 계정 키 JSON 전체)
+name: Firebase 호스팅에 올리기
+on:
+  push:
+    branches: [main, claude/academy-program-standalone-4mhcjb]
+    paths: ['public/**', 'cloud/**', 'docs/**', 'tools/build_cloud.py', 'firebase.json', '.github/workflows/firebase-hosting.yml']
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 클라우드 버전 만들기
+        run: python3 tools/build_cloud.py
+      - name: andover-record.web.app 에 올리기
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: andover-record

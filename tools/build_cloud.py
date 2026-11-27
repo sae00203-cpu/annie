@@ -34,3 +34,14 @@ if not os.path.exists(os.path.join(OUT, 'config.js')):
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8').write(
     '{"name":"앤도버 생활기록","short_name":"앤도버","start_url":".","display":"standalone","background_color":"#f4f6fb","theme_color":"#24418a"}')
 print('built', OUT)
+# ---- Firebase 호스팅용 (andover-record.web.app): 앱을 맨 앞(/)에, 가이드는 /guide/ ----
+HOST = P('hosting')
+if os.path.exists(HOST):
+    shutil.rmtree(HOST)
+shutil.copytree(OUT, HOST)
+h2 = open(os.path.join(HOST, 'index.html'), encoding='utf-8').read().replace('href="../guide/"', 'href="guide/"')
+open(os.path.join(HOST, 'index.html'), 'w', encoding='utf-8').write(h2)
+if os.path.exists(P('docs', 'guide')):
+    shutil.copytree(P('docs', 'guide'), os.path.join(HOST, 'guide'))
+print('built', HOST)
+
