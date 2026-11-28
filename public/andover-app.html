@@ -754,7 +754,7 @@ h2{font-size:20px}
 .lpdt{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:15px}
 .lpdt th,.lpdt td{border:1px solid #555;padding:var(--lpdp,6px) 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
 .lpdt .lpdd{font-size:1.28em;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:1em}
-.lpdt .lpdb{font-weight:800}.lpdn td{text-align:left;font-size:1em;line-height:1.5}.lpdt.three .lpddr th{border-top:2px solid #333}.lpdt .lpdbl{background:#f6dfe6}.lpdn{background:#fff2cc}.lpck{display:inline-block;width:.95em;height:.95em;border:1.5px solid #333;border-radius:2px;vertical-align:-.12em;margin-left:4px;background:#fff}.lpdhw{white-space:normal}.lpdnt{color:#e08a00}
+.lpdt .lpdb{font-weight:800}.lpdn td{text-align:left;font-size:1em;line-height:1.5}.lpdt.three .lpddr th{border-top:2px solid #333}.lpdt .lpdbl{background:#f6dfe6}.lpdn{background:#fff2cc}.lpck{display:inline-block;flex:0 0 auto;width:.9em;height:.9em;border:1.5px solid #333;border-radius:2px;margin-top:.22em;background:#fff}.lpdhws{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;max-width:100%}.lpdhw{display:flex;gap:5px;align-items:flex-start}.lpdnt{color:#e08a00}
 @page lpl{size:A4 landscape;margin:0}
 @media print{body.lpdmode .lppage{box-shadow:none;margin:0;width:297mm;height:209mm;break-after:page;page-break-after:always}body.lpdmode .lppage:last-child{break-after:auto;page-break-after:auto}body.lpdmode .prpages{display:block;padding:0}}
 #prov{position:fixed;inset:0;z-index:200;background:#c9ced8;overflow:auto;padding:0 0 40px}
@@ -959,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-23</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-24</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4245,7 +4245,7 @@ document.addEventListener('change',function(e){var t=e.target;if(t.id==='whoT'){
 var LPD_EN=['Sun','Mon','Tue','Wed','Thurs','Fri','Sat'],LPD_MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var LPD_COL=['#d9ead3','#cfe2f3','#fce5cd','#fff2cc','#e4dcf2','#f4cccc','#d0e0e3','#ead1dc'];
 function lpdTitle(c,days){var k=(S.cfg.lpPdfT||{})[c.id];if(k)return k;var w=[],cn=clsNameAt(c,days[0]);days.forEach(function(d){var x=dDow(d);if(w.indexOf(x)<0)w.push(x)});w.sort(function(a,b){return ORDER.indexOf(a)-ORDER.indexOf(b)});return cn+' Monthly Lesson / Homework Plan ( '+w.map(function(x){return LPD_EN[x]}).join(', ')+' )'}
-function lpdHw(s){return String(s||'').split('\n').filter(function(l){return l.trim()}).map(function(l){return '<span class="lpdhw">'+lpdTxt(l)+' <i class="lpck"></i></span>'}).join('<br>')}
+function lpdHw(s){var L=String(s||'').split('\n').filter(function(l){return l.trim()});if(!L.length)return '';return '<span class="lpdhws">'+L.map(function(l){return '<span class="lpdhw"><i class="lpck"></i><span>'+lpdTxt(l)+'</span></span>'}).join('')+'</span>'}
 function lpDowWarn(c){if(c.dow&&c.dow.length)return '';var g=dowOfName(c.name);return '<span class="dowwarn">'+(g.length?'수업 요일이 비어 있어서 반 이름의 '+g.map(function(d){return DOW[d]}).join('')+' 요일로 계산했어요':'수업 요일이 정해지지 않아 모든 요일을 수업일로 계산했어요')+' — 반 관리에서 수업 요일을 골라 주세요</span>'}
 function lpdTxt(s){return nl(String(s||'')).replace(/([^<>\n]*Video[^<>\n]*)/g,'<b>$1</b>')}
 function lpdNotice(s){return nl(String(s||'')).replace(/\[([^\]]+)\]/g,'<b class="lpdnt">[★ $1 ★]</b>')}
