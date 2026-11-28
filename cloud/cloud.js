@@ -70,7 +70,7 @@
     return db.collection('meta').doc('admin').get().then(function (a) {
       if (a.exists && a.data().uid === u.uid) return { uid: u.uid, name: a.data().name || 'Annie', role: 'admin' };
       return db.collection('staff').doc(u.uid).get().then(function (s) {
-        if (s.exists && s.data().active) return { uid: u.uid, name: s.data().name, role: 'teacher' };
+        if (s.exists && s.data().active) return { uid: u.uid, name: s.data().name, role: s.data().admin ? 'admin' : 'teacher', sub: !!s.data().admin };
         if (!a.exists && u.providerData.some(function (p) { return p.providerId === 'google.com'; })) return { uid: u.uid, name: '', role: 'claim' };
         return null;
       });
@@ -175,6 +175,7 @@
       }, function (e) { throw new Error(/email-already-in-use/.test(e.code) ? '이미 있는 아이디예요. 다른 아이디를 써 주세요 (예: ' + id + '2)' : '만들 수 없어요 (' + e.code + ')'); });
     },
     setActive: function (uid, on) { return db.collection('staff').doc(uid).update({ active: !!on }); },
+    setAdmin: function (uid, on) { return db.collection('staff').doc(uid).update({ admin: !!on }); },
     rename: function (uid, name) { return db.collection('staff').doc(uid).update({ name: String(name).trim() }); },
     changeMyPin: function (pin) { if (String(pin).length < 6) return Promise.reject(new Error('6자리 이상이어야 해요')); return auth.currentUser.updatePassword(String(pin)); },
     /* 학원 컴퓨터 data/store.json 또는 백업 파일 → Firestore (있는 기록은 덮어써요) */

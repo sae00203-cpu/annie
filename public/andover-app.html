@@ -972,7 +972,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-28</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-29</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -3890,9 +3890,9 @@ document.addEventListener('change',function(e){
 });
 /* ---------- 클라우드(Firebase) 버전: 선생님 계정 · 데이터 ---------- */
 function cloudCfgHTML(){
-  var C=window.ANDOVER_CLOUD,m=C.me(),adm=C.isAdmin();
+  var C=window.ANDOVER_CLOUD,m=C.me(),adm=C.isAdmin(),gm=adm&&!m.sub;
   var o='<h2 class="sechd">계정 · 데이터</h2><div class="vbox"><b>'+esc(m.name)+'</b> '+(adm?'<span class="chip ok">관리자</span>':'<span class="chip">선생님</span>')
-    +'<div class="row2"><input id="myPin" class="tx" type="password" inputmode="numeric" placeholder="새 개인 번호 (6자리 이상)" style="max-width:240px"'+(adm?' hidden':'')+'>'+(adm?'':'<button type="button" class="ghost" id="myPinGo">내 개인 번호 바꾸기</button>')+'<button type="button" class="ghost" id="cSignOut">로그아웃</button></div></div>';
+    +'<div class="row2"><input id="myPin" class="tx" type="password" inputmode="numeric" placeholder="새 개인 번호 (6자리 이상)" style="max-width:240px"'+(gm?' hidden':'')+'>'+(gm?'':'<button type="button" class="ghost" id="myPinGo">내 개인 번호 바꾸기</button>')+'<button type="button" class="ghost" id="cSignOut">로그아웃</button></div></div>';
   if(!adm)return o;
   o+='<h2 class="sechd">선생님 계정</h2><p class="hint">선생님은 아이디 + 개인 번호로 로그인해요. 번호를 잊으면 그 계정을 “사용 중지”하고 새 아이디(예: kate2)로 만들어 주세요. 남긴 기록은 이름으로 남아 있어요.</p>'
     +'<div class="cadd"><input id="tNm" class="tx" placeholder="이름 (예: Kate T.)" maxlength="30"><input id="tId" class="tx" placeholder="아이디 (영어 소문자, 예: kate)" maxlength="30" autocapitalize="off"><input id="tPin" class="tx" placeholder="개인 번호 (6자리 이상)" inputmode="numeric" maxlength="20"><button type="button" class="primary" id="tAdd">+ 선생님 추가</button></div>'
@@ -3905,7 +3905,7 @@ function cloudCfgHTML(){
 function cloudStaffLoad(){
   var C=window.ANDOVER_CLOUD;if(!C||!C.isAdmin()||!$('staffList'))return;
   C.staffList().then(function(L){var el=$('staffList');if(!el)return;
-    el.className='';el.innerHTML=L.length?'<div class="tw"><table class="rt"><thead><tr><th>이름</th><th>아이디</th><th>상태</th><th></th></tr></thead><tbody>'+L.map(function(x){return '<tr><td><input class="tx" data-snm="'+esc(x.uid)+'" value="'+esc(x.name||'')+'" style="max-width:180px"></td><td>'+esc(x.loginId||'')+'</td><td>'+(x.active?'<span class="chip ok">사용 중</span>':'<span class="chip">사용 중지</span>')+'</td><td><button type="button" class="ghost sm'+(x.active?' danger':'')+'" data-sact="'+esc(x.uid)+'|'+(x.active?0:1)+'">'+(x.active?'사용 중지':'다시 사용')+'</button></td></tr>'}).join('')+'</tbody></table></div>':'<p class="hint">아직 선생님 계정이 없어요.</p>';
+    el.className='';el.innerHTML=L.length?'<div class="tw"><table class="rt"><thead><tr><th>이름</th><th>아이디</th><th>상태</th><th>관리자</th><th></th></tr></thead><tbody>'+L.map(function(x){return '<tr><td><input class="tx" data-snm="'+esc(x.uid)+'" value="'+esc(x.name||'')+'" style="max-width:180px"></td><td>'+esc(x.loginId||'')+'</td><td>'+(x.active?'<span class="chip ok">사용 중</span>':'<span class="chip">사용 중지</span>')+'</td><td><label class="ck" style="margin:0"><input type="checkbox" data-sadm="'+esc(x.uid)+'"'+(x.admin?' checked':'')+'> 관리자</label></td><td><button type="button" class="ghost sm'+(x.active?' danger':'')+'" data-sact="'+esc(x.uid)+'|'+(x.active?0:1)+'">'+(x.active?'사용 중지':'다시 사용')+'</button></td></tr>'}).join('')+'</tbody></table></div>':'<p class="hint">아직 선생님 계정이 없어요.</p>';
   },function(e){var el=$('staffList');if(el)el.textContent='목록을 불러오지 못했어요 ('+(e.code||e.message)+')'});
 }
 document.addEventListener('click',function(e){
@@ -3914,6 +3914,7 @@ document.addEventListener('click',function(e){
   if(t.closest('#myPinGo')){C.changeMyPin($('myPin').value).then(function(){toast('개인 번호를 바꿨어요');$('myPin').value=''},function(er){toast(er.code==='auth/requires-recent-login'?'다시 로그인한 뒤에 바꿔 주세요':er.message)});return}
   if(t.closest('#tAdd')){var nm=$('tNm').value.trim();if(!nm){toast('이름을 적어 주세요');return}t.disabled=true;
     C.addTeacher(nm,$('tId').value,$('tPin').value).then(function(){toast(nm+' 선생님 계정을 만들었어요');$('tNm').value='';$('tId').value='';$('tPin').value='';t.disabled=false;cloudStaffLoad()},function(er){toast(er.message);t.disabled=false});return}
+  var sd=t.closest('[data-sadm]');if(sd&&C.setAdmin){var on=sd.checked;C.setAdmin(sd.dataset.sadm,on).then(function(){toast(on?'관리자로 정했어요 · 그 선생님이 다시 로그인하면 적용돼요':'관리자에서 뺐어요');cloudStaffLoad()},function(er){sd.checked=!on;toast('바꾸지 못했어요 ('+(er.code||er.message)+') · 보안 규칙을 새로 붙여 넣었는지 확인해 주세요')});return}
   var sa=t.closest('[data-sact]');if(sa){var q=sa.dataset.sact.split('|');C.setActive(q[0],q[1]==='1').then(function(){toast(q[1]==='1'?'다시 사용할 수 있어요':'사용을 멈췄어요');cloudStaffLoad()});return}
   if(t.closest('#cExport')){var blob=new Blob([JSON.stringify(C.exportStore())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='andover-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);toast('백업 파일을 내려받았어요');return}
 });

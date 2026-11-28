@@ -5,8 +5,15 @@ service cloud.firestore {
   match /databases/{db}/documents {
     function signedIn() { return request.auth != null; }
     function adminDoc() { return get(/databases/$(db)/documents/meta/admin); }
-    function isAdmin() {
+    function isMain() {
       return signedIn() && exists(/databases/$(db)/documents/meta/admin) && adminDoc().data.uid == request.auth.uid;
+    }
+    // 관리자: 처음 등록한 관리자 + 선생님 계정 중 '관리자'로 지정된 사람
+    function isAdmin() {
+      return isMain() || (signedIn()
+        && exists(/databases/$(db)/documents/staff/$(request.auth.uid))
+        && get(/databases/$(db)/documents/staff/$(request.auth.uid)).data.active == true
+        && get(/databases/$(db)/documents/staff/$(request.auth.uid)).data.admin == true);
     }
     function isStaff() {
       return isAdmin() || (signedIn()
