@@ -959,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-18</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-19</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -2081,7 +2081,7 @@ function plPending(){
   return out;
 }
 function plChip(from,to){if(!to||to===from)return '';var k=moveKind(from,to);return '<span class="lvk k-'+k+'">'+(k==='up'?'⬆ ':k==='down'?'⬇ ':'')+KIND_L[k]+'</span>'}
-function plOpts(sel,blank){var cs=clsByLevel();return '<option value="">'+blank+'</option>'+cs.map(function(c){var l=lvCode(c.id);return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+(l&&l!==c.name?' ('+esc(l)+')':'')+'</option>'}).join('')}
+function plOpts(sel,blank){var cs=clsByLevel();return '<option value="">'+blank+'</option>'+cs.map(function(c){var l=lvCode(c.id);return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+(l&&l!==c.name?' ('+esc(l)+')':'')+(c.ren?' → '+md(c.ren.d)+'부터 '+esc(c.ren.name):'')+(c.from&&c.from>today()?' · '+md(c.from)+' 시작':'')+(c.to&&c.to<today()?' · 종료':'')+'</option>'}).join('')}
 function plRowsHTML(){
   var L=plStudents();if(!L.length)return '<p class="hint">조건에 맞는 학생이 없어요.</p>';
   var last='';
