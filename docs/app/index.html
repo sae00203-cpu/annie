@@ -959,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-5</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-8</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -1007,12 +1007,13 @@ function status(){
   $('save').dataset.s=s;$('saveT').textContent=t;
 }
 var ready=function(){return S.mode==='local'||(S.loaded.c&&S.loaded.s&&S.loaded.d)};
+var dirtyN={};/* 같은 기록을 연달아 고치면, 마지막 저장이 끝날 때까지 서버 답이 덮어쓰지 않게 */
 function write(path,obj,key){
   if(S.mode!=='db')return;
   if(obj&&typeof obj==='object'&&path.indexOf('settings/')!==0){try{var m0=me();if(m0){obj.ed=m0;obj.edAt=new Date().toISOString()}}catch(_){}}
-  pending++;if(key)dirty.add(key);status();
+  pending++;if(key){dirty.add(key);dirtyN[key]=(dirtyN[key]||0)+1}status();
   var p;try{p=obj===null?db.doc(path).delete():db.doc(path).set(obj)}catch(e){p=Promise.reject(e)}
-  p.then(function(){failed=0},function(e){failed++;lastErr=String((e&&(e.code||e.message))||'error').slice(0,40);toast('저장하지 못했어요 ('+lastErr+')')}).then(function(){pending--;if(key)dirty.delete(key);status()});
+  p.then(function(){failed=0},function(e){failed++;lastErr=String((e&&(e.code||e.message))||'error').slice(0,40);toast('저장하지 못했어요 ('+lastErr+')')}).then(function(){pending--;if(key&&--dirtyN[key]<=0){delete dirtyN[key];dirty.delete(key)}status()});
 }
 window.addEventListener('error',function(e){try{toast('오류: '+String(e.message||'').slice(0,80))}catch(_){}});
 function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){t.hidden=true},2400)}
@@ -1279,8 +1280,10 @@ function renderAll(){
   if(cur&&cr&&cr.scrollWidth>cr.clientWidth){var tgt=cur.offsetLeft-(cr.clientWidth-cur.offsetWidth)/2;if(Math.abs(cr.scrollLeft-tgt)>4)cr.scrollTo?cr.scrollTo({left:tgt,behavior:'smooth'}):(cr.scrollLeft=tgt)}
 }
 function typing(){var a=document.activeElement;return !!(a&&a.closest&&(a.tagName==='TEXTAREA'||(a.tagName==='INPUT'&&/^(text|search|number|tel|email|url|)$/i.test(a.type)))&&a.closest('#v-today,#v-lp,#v-coach,#v-ov,#v-mr,#v-manage'))}
-var deferRender=false,ptrDown=false;
-function renderSoft(){if(typing()||ptrDown){deferRender=true;status();return}deferRender=false;renderAll()}
+var deferRender=false,ptrDown=false,chgBusy=false;
+/* 칸에서 나가며 저장(change)하는 동안은 다시 그리지 않아요: 다음 칸으로 넘어간 뒤 그려요 */
+document.addEventListener('change',function(){chgBusy=true;setTimeout(function(){chgBusy=false;if(deferRender)flushSoft()},0)},true);
+function renderSoft(){if(typing()||ptrDown||chgBusy){deferRender=true;status();return}deferRender=false;renderAll()}
 /* 칸을 고친 뒤 바로 버튼을 누르면, 누르는 도중에 화면이 다시 그려져 클릭이 사라졌어요. 손을 뗄 때까지 기다려요. */
 function flushSoft(){setTimeout(function(){if(deferRender&&!ptrDown&&!typing()){deferRender=false;renderAll()}},60)}
 document.addEventListener('pointerdown',function(){ptrDown=true},true);
@@ -4084,7 +4087,7 @@ function ypPrevHTML(){
 }
 /* ---------- 설정 → 레슨플랜 기준: 교재 목록 · Syllabus · 연간 교재 계획 ---------- */
 var LP_UT=['Unit','Story','Module','Lesson','Day'];
-function lpCfgHTML(){ypCalFix();
+function lpCfgHTML(){ypCalFix();if(S.catQv)setTimeout(function(){if($('catQ'))catFilter(S.catQv)},0);
   var cat=ypCat(),cls=Array.from(S.yplan.keys()).filter(function(k){return k!=='_cat'}).map(function(k){return S.yplan.get(k)});
   var o='<h2 class="sechd">레슨플랜 기준</h2><p class="hint">레슨플랜 만들기에서 쓰는 기준이에요. 여기서 고치면 모든 반에 같이 적용돼요.</p>';
   o+=ypPrevHTML();
@@ -4101,11 +4104,11 @@ function lpCfgHTML(){ypCalFix();
   // 교재 목록
   o+='<div class="vbox"><div class="fl" style="margin-top:0">교재 목록 · Unit별 횟수 <span class="muted">'+cat.length+'권</span></div>'
     +'<p class="hint" style="margin-top:0">Unit당 Day와 숙제를 여기서 정하면 레슨플랜을 만들 때 그대로 써요. 숙제에 {u} {d} 를 넣으면 그날 Unit · Day 번호로 바뀌어요. 예) <code>Metabook Unit {u} Day {d}</code> → Metabook Unit 4 Day 3, 그냥 <code>Meta book</code> 이라고만 적어도 돼요. 고치면 바로 저장돼요.</p>'
-    +'<div class="row2" style="margin-top:0"><input class="tx" id="catQ" placeholder="교재 찾기" style="max-width:260px"><button type="button" class="ghost sm" id="catAdd">+ 교재 추가</button><button type="button" class="ghost sm danger" id="catDelSel" disabled>고른 교재 삭제</button><label class="ghost sm filebtn">엑셀로 올리기<input type="file" id="catF" accept=".xlsx,.xls,.csv" hidden></label></div>'
-    +'<p class="hint" style="margin-top:0">엑셀 첫 줄에 <b>교재(book_name) · 분류(category) · 단위(unit_type) · Unit 수(total_units) · Unit당 Day(days_per_unit) · 숙제</b> (숙제 칸 예: <code>Metabook Unit {u} Day {d}</code>) · 단어시험 · 시험 Day 열도 읽어요 중 있는 열만 있으면 돼요. 올리면 바로 적용돼요: 같은 교재는 새 값으로 바꾸고, 없던 교재는 더해요.</p>'
+    +'<div class="row2" style="margin-top:0"><input class="tx" id="catQ" placeholder="교재 찾기" style="max-width:260px" value="'+esc(S.catQv||'')+'"><button type="button" class="ghost sm" id="catAdd">+ 교재 추가</button><button type="button" class="ghost sm danger" id="catDelSel" disabled>고른 교재 삭제</button><label class="ghost sm filebtn">엑셀로 올리기<input type="file" id="catF" accept=".xlsx,.xls,.csv" hidden></label></div>'
+    +'<p class="hint" style="margin-top:0">엑셀 첫 줄에 <b>교재(book_name) · 분류(category) · 단위(unit_type) · Unit 수(total_units) · Unit당 Day(days_per_unit) · 숙제</b> (숙제 칸 예: <code>Metabook Unit {u} Day {d}</code>) · 단어시험 · 시험 Day 열도 읽어요. 한 Unit에 시험이 두 번이면 시험 Day에 <code>1,3</code>, 단어시험에 <code>{book} Unit {u} 단어시험 | {book} Unit {u} 단어시험 (Review)</code> 처럼 | 로 나눠 적어요 중 있는 열만 있으면 돼요. 올리면 바로 적용돼요: 같은 교재는 새 값으로 바꾸고, 없던 교재는 더해요.</p>'
     +lpGrpBox('cat',cat.map(function(b,i){return {g:lpGrp(b.name,b.cat),h:'<tr data-catrow="'+esc((b.name+' '+(b.cat||'')).toLowerCase())+'"><td class="catc"><input type="checkbox" class="catck" data-cati="'+i+'" aria-label="고르기"></td><td><input class="tx" data-cat="'+i+'|name" value="'+esc(b.name)+'"></td><td><input class="tx n2" data-cat="'+i+'|cat" value="'+esc(b.cat||'')+'"></td>'
       +'<td><select class="tx" data-cat="'+i+'|type">'+LP_UT.map(function(t){return '<option'+(String(b.type||'Unit').trim()===t?' selected':'')+'>'+t+'</option>'}).join('')+'</select></td>'
-      +'<td><input class="tx n" data-cat="'+i+'|units" value="'+(b.units||'')+'" inputmode="numeric"></td><td><input class="tx n" data-cat="'+i+'|dpu" value="'+(b.dpu||'')+'" inputmode="numeric"></td><td><input class="tx" data-cat="'+i+'|hw" value="'+esc(b.hw||'')+'" placeholder="예) Metabook U{u} D{d}"></td><td><input class="tx" data-cat="'+i+'|wt" value="'+esc(b.wt||'')+'" placeholder="예) {book} Unit {u} Word test"></td><td><input class="tx n" data-cat="'+i+'|wtd" value="'+(b.wtd||'')+'" placeholder="1" inputmode="numeric"></td>'
+      +'<td><input class="tx n" data-cat="'+i+'|units" value="'+(b.units||'')+'" inputmode="numeric"></td><td><input class="tx n" data-cat="'+i+'|dpu" value="'+(b.dpu||'')+'" inputmode="numeric"></td><td><input class="tx" data-cat="'+i+'|hw" value="'+esc(b.hw||'')+'" placeholder="예) Metabook U{u} D{d}"></td><td><input class="tx" data-cat="'+i+'|wt" value="'+esc(b.wt||'')+'" placeholder="예) {book} Unit {u} Word test"></td><td><input class="tx n" data-cat="'+i+'|wtd" value="'+esc(String(b.wtd||''))+'" placeholder="1" inputmode="text"></td>'
       +'<td><small class="muted">'+((+b.units||0)*(+b.dpu||0)||'')+'</small></td><td><button type="button" class="ghost sm danger" data-catdel="'+i+'">×</button></td></tr>'}}),catTable)+'</div>';
   return o;
 }
@@ -4128,7 +4131,7 @@ function catParse(wb){
       if(iN>=0&&iD>=0){hi=r;ix={n:iN,d:iD,c:f(/^(category|분류|영역|section)$/),t:f(/^(unit_?type|단위|type)$/),u:f(/total_?units|unit\s*수|units?$/),h:f(/^(hw|homework|숙제)/),wd:f(/(시험|test)\s*_?day/),wt:f(/^(단어\s*시험|word\s*_?test|voca\s*_?test)(?!.*day)/)};break}}
     if(hi<0)return;
     A.slice(hi+1).forEach(function(R){var n=String(R[ix.n]||'').replace(/\s+/g,' ').trim();if(!n)return;
-      var o={name:n,dpu:+R[ix.d]||0};if(ix.c>=0&&String(R[ix.c]).trim())o.cat=String(R[ix.c]).trim();if(ix.t>=0&&String(R[ix.t]).trim())o.type=String(R[ix.t]).trim();if(ix.u>=0&&+R[ix.u])o.units=+R[ix.u];if(ix.h>=0&&String(R[ix.h]).trim())o.hw=hwClean(R[ix.h]);if(ix.wt>=0&&String(R[ix.wt]).trim())o.wt=String(R[ix.wt]).trim();if(ix.wd>=0&&+R[ix.wd])o.wtd=+R[ix.wd];out.push(o)});
+      var o={name:n,dpu:+R[ix.d]||0};if(ix.c>=0&&String(R[ix.c]).trim())o.cat=String(R[ix.c]).trim();if(ix.t>=0&&String(R[ix.t]).trim())o.type=String(R[ix.t]).trim();if(ix.u>=0&&+R[ix.u])o.units=+R[ix.u];if(ix.h>=0&&String(R[ix.h]).trim())o.hw=hwClean(R[ix.h]);if(ix.wt>=0&&String(R[ix.wt]).trim())o.wt=String(R[ix.wt]).trim();if(ix.wd>=0&&wtdClean(R[ix.wd]))o.wtd=wtdClean(R[ix.wd]);out.push(o)});
   });
   return out;
 }
@@ -4142,7 +4145,8 @@ function catSelSync(){var n=document.querySelectorAll('.catck:checked').length,b
 document.addEventListener('change',function(e){var t=e.target;
   if(t.classList&&t.classList.contains('catAllG')){t.closest('table').querySelectorAll('[data-catrow]').forEach(function(r){if(!r.hidden){var c=r.querySelector('.catck');if(c)c.checked=t.checked}});catSelSync();return}
   if(t.classList&&t.classList.contains('catck'))catSelSync()});
-document.addEventListener('input',function(e){if(e.target.id!=='catQ')return;var q=e.target.value.trim();S.grpQ=!!q;var ql=q.toLowerCase();document.querySelectorAll('[data-catrow]').forEach(function(r){r.hidden=!!ql&&r.dataset.catrow.indexOf(ql)<0});document.querySelectorAll('.catAllG').forEach(function(a){a.checked=false});
+function catFilter(q){S.catQv=q;var ql=q.toLowerCase();document.querySelectorAll('[data-catrow]').forEach(function(r){r.hidden=!!ql&&r.dataset.catrow.indexOf(ql)<0});document.querySelectorAll('details.lpgrp[data-grp^="cat|"]').forEach(function(d){var n=d.querySelectorAll('[data-catrow]:not([hidden])').length;d.hidden=!!q&&!n;d.open=q?n>0:!!S.grpOpen[d.dataset.grp]})}
+document.addEventListener('input',function(e){if(e.target.id!=='catQ')return;var q=e.target.value.trim();S.catQv=q;S.grpQ=!!q;var ql=q.toLowerCase();document.querySelectorAll('[data-catrow]').forEach(function(r){r.hidden=!!ql&&r.dataset.catrow.indexOf(ql)<0});document.querySelectorAll('.catAllG').forEach(function(a){a.checked=false});
   document.querySelectorAll('details.lpgrp[data-grp^="cat|"]').forEach(function(d){var n=d.querySelectorAll('[data-catrow]:not([hidden])').length;d.hidden=!!q&&!n;d.open=q?n>0:!!S.grpOpen[d.dataset.grp]});setTimeout(function(){S.grpQ=false},0)});
 document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;var b=t.closest('#catDelSel');if(!b||b.disabled)return;
   var ix=Array.from(document.querySelectorAll('.catck:checked')).map(function(c){return +c.dataset.cati});if(!ix.length)return;
@@ -4152,7 +4156,7 @@ function catPut(L){var d={books:L,at:new Date().toISOString()};S.yplan.set('_cat
 function lpRe(){if($('v-lp')&&!$('v-lp').hidden)renderLp();else renderManage()}
 document.addEventListener('input',function(e){var t=e.target;if(t.id!=='catQ')return;var q=t.value.trim().toLowerCase();document.querySelectorAll('[data-catrow]').forEach(function(r){r.hidden=!!q&&r.dataset.catrow.indexOf(q)<0})});
 document.addEventListener('change',function(e){var t=e.target;if(!t.dataset||t.dataset.cat==null)return;var q=t.dataset.cat.split('|'),L=ypCat().map(function(x){return Object.assign({},x)}),b=L[+q[0]];if(!b)return;
-  b[q[1]]=/^(units|dpu|wtd)$/.test(q[1])?(+t.value||0):q[1]==='hw'?hwClean(t.value):t.value.trim();catPut(L);var tr=t.closest('tr'),tc=tr&&tr.children[9];if(tc)tc.innerHTML='<small class="muted">'+(((+b.units||0)*(+b.dpu||0))||'')+'</small>';toast('저장했어요')});
+  b[q[1]]=q[1]==='wtd'?wtdClean(t.value):/^(units|dpu)$/.test(q[1])?(+t.value||0):q[1]==='hw'?hwClean(t.value):t.value.trim();catPut(L);var tr=t.closest('tr'),tc=tr&&tr.children[9];if(tc)tc.innerHTML='<small class="muted">'+(((+b.units||0)*(+b.dpu||0))||'')+'</small>';toast('저장했어요')});
 document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;
   if(t.closest('#lpGoSess')){S.prevTab=S.tab;S.tab='manage';S.setSub='class';S.cbY=+S.lpb.ym.slice(0,4);disarm();renderAll();setTimeout(function(){var x=document.querySelector('.sest');if(x)x.scrollIntoView({block:'center'})},50);return}
   if(t.closest('#lpGoCfg')){S.prevTab=S.tab;S.tab='manage';S.setSub='lpcfg';disarm();renderAll();window.scrollTo(0,0);return}
@@ -4449,12 +4453,18 @@ function lpSlotHTML(c,R,days,ym){var D=days.length;if(!D||!R.books.length)return
   return '<p class="hint lpslot'+(ok?'':' warn')+'">이 달 시수 합 <b>'+T+'</b> (행사 포함) · 수업 <b>'+D+'</b>일 → 하루 <b>'+(ok?k:k.toFixed(1))+'</b>칸'+(ok?'':' · 날마다 칸 수가 조금씩 달라져요. 시수 합이 '+(Math.round(k)*D)+'이면 하루 '+Math.round(k)+'칸으로 딱 맞아요')+'</p>'}
 /* 교재 목록의 단어시험 패턴 → 시험 치는 날(그 Unit 의 '시험 Day') 바로 전 수업의 '단어시험 준비' 칸에
  * 예) True Stories 1B Unit 15 Word test (12/3 실시). 선생님이 손으로 고친 칸은 그대로 둬요. */
-function lpWtOf(book){var ct=lpCatOf(book);return ct&&ct.wt?{t:String(ct.wt),d:+ct.wtd||1}:null}
+function wtdClean(v){return String(v==null?'':v).replace(/[^0-9,]+/g,',').split(',').filter(Boolean).map(Number).filter(function(x){return x>0}).join(',')}
+function sylOfBook(book){var sl=sylList().find(function(x){return ypSame(x.name,book)});return sl?S.syl.get(sl.id):null}
+function lpWtOf(book){var ct=lpCatOf(book);if(!ct||!ct.wt)return null;var ds=(wtdClean(ct.wtd)||'1').split(',').map(Number),ts=String(ct.wt).split('|').map(function(s){return s.trim()}).filter(Boolean);return {ds:ds,ts:ts}}
 function lpVocaApply(c,ym){
   var days=lpDays(c,ym),prev=lpPrevPlans(c,(days[0]||ym+'-01'))[0],L=(prev?[prev.date]:[]).concat(days),add={},n=0;
   L.forEach(function(d,i){if(i===0&&prev)return;var pl=S.plans.get(c.id+'_'+d);if(!pl)return;
-    (pl.blocks||[]).forEach(function(b){var w=lpWtOf(b.book);if(!w)return;var m=String(lpLes(b)).match(/(?:Unit|Story|Module|Lesson|Chapter)\s*(\d+)\D+?(\d+)/i);if(!m||+m[2]!==w.d)return;
-      var pd=L[i-1];if(!pd)return;var tx=w.t.replace(/\{book\}/g,b.book).replace(/\{u\}/g,m[1]).replace(/\{d\}/g,m[2])+' ('+md(d)+' 실시)';(add[pd]=add[pd]||[]).push(tx)})});
+    (pl.blocks||[]).forEach(function(b){var w=lpWtOf(b.book),sy=b.sn&&sylOfBook(b.book);
+      if(sy){var row=sy.rows[b.sn-1];if(!row||!/word\s*test|단어\s*시험/i.test(row.cw||''))return;var u=(String(row.u).match(/\d+/)||[''])[0],k=0;for(var q=b.sn-2;q>=0&&sy.rows[q].u===row.u;q--)if(/word\s*test|단어\s*시험/i.test(sy.rows[q].cw||''))k++;
+        var TS=w?w.ts:['{book} Unit {u} 단어시험 준비','{book} Unit {u} 단어시험 준비 (Review)'],pd0=L[i-1];if(!pd0)return;
+        (add[pd0]=add[pd0]||[]).push((TS[k]||TS[TS.length-1]).replace(/\{book\}/g,b.book).replace(/\{u\}/g,u).replace(/\{d\}/g,sylDay(sy,b.sn))+' ('+md(d)+' 실시)');return}
+      if(!w)return;var m=String(lpLes(b)).match(/(?:Unit|Story|Module|Lesson|Chapter)\s*(\d+)\D+?(\d+)/i);var wi=m?w.ds.indexOf(+m[2]):-1;if(wi<0)return;
+      var pd=L[i-1];if(!pd)return;var tx=(w.ts[wi]||w.ts[w.ts.length-1]).replace(/\{book\}/g,b.book).replace(/\{u\}/g,m[1]).replace(/\{d\}/g,m[2])+' ('+md(d)+' 실시)';(add[pd]=add[pd]||[]).push(tx)})});
   Object.keys(add).forEach(function(d){var id=c.id+'_'+d,pl=S.plans.get(id);if(!pl)return;var tx=add[d].join('\n');
     if(pl.voca&&pl.voca!==pl.vocaAuto)return;if(pl.voca===tx)return;var np=Object.assign({},pl,{voca:tx,vocaAuto:tx});S.plans.set(id,np);write('plans/'+id,np,'p'+id);n++});
   return n;
