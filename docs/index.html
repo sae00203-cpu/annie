@@ -1112,6 +1112,17 @@ h2{font-size:20px}
 <style id="ux-v2">
 .srmh .prbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 /* 학부모 리포트 (A4) */
+/* 레슨플랜 PDF */
+.lppage{width:1123px;height:794px;background:#fff;color:#111;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:26px 30px;box-sizing:border-box;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;page:lpl}
+.lpdhd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lpdlogo{font-weight:800;font-size:17px;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
+.lpdtt{text-align:center;flex:1}.lpdtt h1{font-size:19px;margin:0;font-weight:800}.lpdtt p{margin:4px 0 0;font-weight:700;font-size:14px}.lpdtt p span{color:#d6281f}
+.lpdt{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:12.5px}
+.lpdt th,.lpdt td{border:1px solid #555;padding:6px 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
+.lpdt .lpdd{font-size:16px;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:12.5px}
+.lpdt .lpdb{font-weight:800}.lpdn td{text-align:left;font-size:12.5px}.lpdn{background:#fff8e1}.lpdnt{color:#e08a00}
+@page lpl{size:A4 landscape;margin:0}
+@media print{body.lpdmode .lppage{box-shadow:none;margin:0;width:297mm;height:209mm;break-after:page;page-break-after:always}body.lpdmode .lppage:last-child{break-after:auto;page-break-after:auto}body.lpdmode .prpages{display:block;padding:0}}
 #prov{position:fixed;inset:0;z-index:200;background:#c9ced8;overflow:auto;padding:0 0 40px}
 #prov[hidden]{display:none}
 body.prmode{overflow:hidden}
@@ -4474,6 +4485,45 @@ function whoHTML(){
     +'</tbody></table></div>'+(R.length>300?'<p class="hint">최근 300건까지 보여요.</p>':'');
 }
 document.addEventListener('change',function(e){var t=e.target;if(t.id==='whoT'){S.who.t=t.value;renderManage()}else if(t.id==='whoK'){S.who.k=t.value;renderManage()}});
+/* ---------- 레슨플랜 PDF (A4 가로, 한 장에 수업 4번) ---------- */
+var LPD_EN=['Sun','Mon','Tue','Wed','Thurs','Fri','Sat'],LPD_MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var LPD_COL=['#d9ead3','#cfe2f3','#fce5cd','#fff2cc','#e4dcf2','#f4cccc','#d0e0e3','#ead1dc'];
+function lpdTitle(c,days){var k=(S.cfg.lpPdfT||{})[c.id];if(k)return k;var w=[];days.forEach(function(d){var x=dDow(d);if(w.indexOf(x)<0)w.push(x)});w.sort(function(a,b){return ORDER.indexOf(a)-ORDER.indexOf(b)});return c.name+' Monthly Lesson / Homework Plan ( '+w.map(function(x){return LPD_EN[x]}).join(', ')+' )'}
+function lpdTxt(s){return nl(String(s||'')).replace(/([^<>\n]*Video[^<>\n]*)/g,'<b>$1</b>')}
+function lpdNotice(s){return nl(String(s||'')).replace(/\[([^\]]+)\]/g,'<b class="lpdnt">[★ $1 ★]</b>')}
+function lpdPages(c,ym,title){
+  var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length)return [];
+  var p=ym.split('-'),col={},ci=0,lv=null,notice='';
+  days.forEach(function(d){var pl=S.plans.get(c.id+'_'+d);(pl.blocks||[]).forEach(function(b){if(b.book&&!(b.book in col))col[b.book]=LPD_COL[(ci++)%LPD_COL.length]});if(!lv)lv=spcLevel(c,pl);if(!notice&&pl.notice)notice=pl.notice});
+  var head='<div class="lpdhd"><span class="lpdlogo l">FRAGE JUNIOR</span><div class="lpdtt"><h1>'+esc(title)+'</h1><p>'+p[0]+' '+LPD_MON[+p[1]-1]+' Session : <span>'+days[0].slice(5).replace('-','/')+' ~ '+days[days.length-1].slice(5).replace('-','/')+'</span></p></div><span class="lpdlogo r">프라게에듀</span></div>';
+  var pages=[];
+  for(var i=0;i<days.length;i+=4){
+    var ds=days.slice(i,i+4);while(ds.length<4)ds.push('');
+    var P=ds.map(function(d){return d?S.plans.get(c.id+'_'+d):null}),nb=Math.max.apply(null,P.map(function(pl){return pl?(pl.blocks||[]).filter(function(b){return b.book}).length:0}));
+    var o='<table class="lpdt"><colgroup><col style="width:9%">'+ds.map(function(){return '<col>'}).join('')+'</colgroup><tr><th class="lpdl">Date</th>'+ds.map(function(d){return '<th class="lpdd">'+(d?LPD_EN[dDow(d)]+'<br>'+md(d):'')+'</th>'}).join('')+'</tr>';
+    for(var k=0;k<nb;k++){
+      var B=P.map(function(pl){return pl?(pl.blocks||[]).filter(function(b){return b.book})[k]:null});
+      o+='<tr><th class="lpdl">Books</th>'+B.map(function(b){return '<td class="lpdb"'+(b?' style="background:'+col[b.book]+'"':'')+'>'+(b?esc(b.book):'')+'</td>'}).join('')+'</tr>'
+        +'<tr><th class="lpdl">Lesson<br>Plan</th>'+B.map(function(b){return '<td>'+(b?lpdTxt(b.lesson):'')+'</td>'}).join('')+'</tr>'
+        +'<tr><th class="lpdl">HW</th>'+B.map(function(b){return '<td>'+(b?lpdTxt(b.hw):'')+'</td>'}).join('')+'</tr>';
+    }
+    if(P.some(function(pl){return pl&&pl.voca}))o+='<tr><th class="lpdl">Voca Test<br>준비</th>'+P.map(function(pl){return '<td>'+(pl?lpdTxt(pl.voca):'')+'</td>'}).join('')+'</tr>';
+    if(P.some(function(pl){return pl&&pl.spc}))o+='<tr><th class="lpdl">SPC'+(lv?'<br>'+esc(lv):'')+'</th>'+P.map(function(pl){return '<td>'+(pl?lpdTxt(String(pl.spc||'').replace(/Video 찍기/g,'Video Homework')):'')+'</td>'}).join('')+'</tr>';
+    if(P.some(function(pl){return pl&&pl.online}))o+='<tr><th class="lpdl">Online</th>'+P.map(function(pl){return '<td>'+(pl?lpdTxt(pl.online):'')+'</td>'}).join('')+'</tr>';
+    if(notice)o+='<tr class="lpdn"><th class="lpdl" style="color:#d6281f">Notice</th><td colspan="4">'+lpdNotice(notice)+'</td></tr>';
+    pages.push('<div class="lppage">'+head+o+'</table></div>');
+  }
+  return pages;
+}
+function lpdOpen(c,ym){
+  var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length){toast('이 달 레슨플랜이 없어요');return}
+  var title=lpdTitle(c,days),ov=$('prov');if(!ov){ov=document.createElement('div');ov.id='prov';document.body.appendChild(ov)}
+  var draw=function(){var pg=lpdPages(c,ym,title);ov.querySelector('.prpages').innerHTML=pg.join('');var m=ov.querySelector('.prbar .muted');if(m)m.textContent=pg.length+'장'};
+  ov.innerHTML='<div class="prbar"><b>레슨플랜 PDF</b><span class="muted"></span><input class="tx" id="lpdT" value="'+esc(title)+'" style="flex:1;min-width:240px;max-width:560px" aria-label="제목"><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">제목은 고칠 수 있어요(반마다 기억해요). PDF로 저장 → 인쇄 창에서 대상을 “PDF로 저장”으로 고르면 돼요. 가로 방향으로 저장돼요.</p></div><div class="prpages lpdpages"></div>';
+  ov.hidden=false;document.body.classList.add('prmode','lpdmode');draw();ov.scrollTop=0;
+  $('lpdT').addEventListener('change',function(){title=this.value.trim()||lpdTitle(c,days);var all=Object.assign({},S.cfg.lpPdfT||{});all[c.id]=this.value.trim();S.cfg.lpPdfT=all;cfgPut();draw()});
+}
+document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;if(t.closest('#lpPdf')){var c=S.classes.find(function(x){return x.id===S.lpb.cid});if(c)lpdOpen(c,S.lpb.ym);return}if(t.closest('#prClose'))document.body.classList.remove('lpdmode')},true);
 function lpFill(c,ym,over){
   var R=lpRules(c.id),days=lpDays(c,ym),bd=R.books.map(function(b){return lpBookDays(c,b,days)}),st=R.books.map(function(b){return {u:+b.su||1,d:+b.sd||1,n:+b.sn||1,k:0}}),vn=+R.voca.n||1,sn=+R.spc.n||1,ev=(S.cfg.spcCert&&+S.cfg.spcCert.every)||6,made=0,skip=0;
   days.forEach(function(d){
@@ -4497,7 +4547,7 @@ function renderLp(){var a=document.activeElement,k=a&&a.dataset&&a.dataset.lpe;i
 function lpViewHTML(){
   var cs=S.classes;if(!cs.length)return '<p class="hint">반을 먼저 만들어 주세요.</p>';
   var L=S.lpb,c=cls()||cs[0];L.cid=c.id;var days=lpDays(c,L.ym),p=L.ym.split('-'),t=today(),n=days.filter(function(d){return S.plans.get(c.id+'_'+d)}).length;
-  var o='<div class="lpbar"><b class="lpcn">'+esc(c.name)+'</b><button type="button" class="nav" data-lpm="-1">‹</button><b>'+p[0]+'년 '+Number(p[1])+'월</b><button type="button" class="nav" data-lpm="1">›</button><span class="muted">수업 '+days.length+'일 · 계획 '+n+'일</span><button type="button" class="ghost sm" id="lpXl" style="margin-left:auto">엑셀로 내려받기</button></div>';
+  var o='<div class="lpbar"><b class="lpcn">'+esc(c.name)+'</b><button type="button" class="nav" data-lpm="-1">‹</button><b>'+p[0]+'년 '+Number(p[1])+'월</b><button type="button" class="nav" data-lpm="1">›</button><span class="muted">수업 '+days.length+'일 · 계획 '+n+'일</span><span style="margin-left:auto;display:inline-flex;gap:6px"><button type="button" class="primary sm" id="lpPdf">PDF로 내려받기</button><button type="button" class="ghost sm" id="lpXl">엑셀</button></span></div>';
   if(!days.length)return o+'<p class="hint">이 달에는 이 반 수업일이 없어요.</p>';
   if(!n)return o+'<div class="empty"><h2>이 달 레슨플랜이 아직 없어요</h2><p>'+(lpAdm()?'위 <b>레슨플랜 만들기</b>에서 만들 수 있어요.':'원장님이 만들면 여기에 보여요.')+'</p></div>';
   return o+'<div class="lpv">'+days.map(function(d){var pl=S.plans.get(c.id+'_'+d),cls0='lpvc'+(d===t?' now':'')+(d<t?' past':'');
@@ -4529,8 +4579,8 @@ function lpBuildHTML(){
     +'<div class="lprow"><span class="lpk">단어</span><select class="tx lppick" data-lpx="voca|book">'+lpVocaOpts(R)+'</select>'+(R.voca.t?'<label>시작 Day'+lpNumSel('data-lpx="voca|n"',R.voca.n||1,lpMaxOf(R.voca.t,60))+'</label>':'')+'</div>'
     +'<div class="lprow"><span class="lpk">SPC</span><label class="ck"><input type="checkbox" data-lpx="spc|on"'+(R.spc.on?' checked':'')+'> 스피킹 인증 Day 넣기</label>'+(R.spc.on?'<label>시작 Day'+lpNumSel('data-lpx="spc|n"',R.spc.n||1,72)+'</label><span class="muted">'+((S.cfg.spcCert&&S.cfg.spcCert.every)||6)+' Day마다 “Video 찍기”</span>':'')+'</div>'
     +'<p class="hint lpsyl">교재 목록 · Unit당 Day · 숙제 · Syllabus · 연간 교재 계획은 <button type="button" class="linkbtn" id="lpGoCfg">설정 → 레슨플랜 기준</button>에서 정해요.</p>'
-    +'</details><div class="row2 lpgo"><button type="button" class="primary" id="lpFill">이 달 자동 채우기</button><label class="ck"><input type="checkbox" id="lpOver"> 엑셀로 올린 계획도 덮어쓰기</label><button type="button" class="ghost" id="lpXl">엑셀로 내려받기</button></div>';
-  else o+='<div class="row2"><button type="button" class="ghost" id="lpXl">엑셀로 내려받기</button></div>';
+    +'</details><div class="row2 lpgo"><button type="button" class="primary" id="lpFill">이 달 자동 채우기</button><label class="ck"><input type="checkbox" id="lpOver"> 엑셀로 올린 계획도 덮어쓰기</label><button type="button" class="ghost" id="lpPdf">PDF로 내려받기</button><button type="button" class="ghost" id="lpXl">엑셀로 내려받기</button></div>';
+  else o+='<div class="row2"><button type="button" class="ghost" id="lpPdf">PDF로 내려받기</button><button type="button" class="ghost" id="lpXl">엑셀로 내려받기</button></div>';
   // 날짜별 표
   var bookCols=[];days.forEach(function(d){var pl=S.plans.get(c.id+'_'+d);(pl&&pl.blocks||[]).forEach(function(b){if(b.book&&bookCols.indexOf(b.book)<0)bookCols.push(b.book)})});
   R.books.forEach(function(b){if(b.book&&bookCols.indexOf(b.book)<0)bookCols.push(b.book)});
