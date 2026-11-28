@@ -977,7 +977,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-32</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-33</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4603,9 +4603,9 @@ var HM_COL=[['','기본'],['#e53935','빨강'],['#fb8c00','주황'],['#fbc02d','
 function homeChip(it){if(it.k==='my'){var cc=it.c||'#9c27b0';return '<span class="hm hm-my ed" style="border-left-color:'+cc+';background:'+cc+'22" data-hedit="'+it.i+'" role="button" tabindex="0">'+(it.tm?'<b>'+esc(it.tm)+'</b> ':'')+esc(it.t)+(it.memo?' <span class="hmm">✎</span>':'')+'</span>'}var t=it.t,del='',tip='';if(t.indexOf('\u0002')>0){var q2=t.split('\u0002');t=q2[0];tip=q2[1]}if(it.k==='my'&&t.indexOf('\u0001')>0){var q=t.split('\u0001');t=q[0];del=' <button type="button" class="hmx" data-hdel="'+q[1]+'" aria-label="지우기">×</button>'}return '<span class="hm hm-'+it.k+(tip?' ed':'')+'"'+(tip?' title="'+esc(tip)+'" data-htip="'+esc(tip)+'" data-httl="'+esc(t)+'" role="button" tabindex="0"':'')+'>'+esc(t)+del+'</span>'}
 function renderHome(){
   var H=S.home;if(!H.ym)H.ym=today().slice(0,7);var ym=H.ym,p=ym.split('-'),D=homeItems(ym),r=calRange(ym),t=today();
-  var first=dDow(r[0]),lead=(first+6)%7,o='<div class="lpbar hmbar"><button type="button" class="nav" data-hm="-1">‹</button><b>'+p[0]+'년 '+Number(p[1])+'월</b><button type="button" class="nav" data-hm="1">›</button>'+(ym!==t.slice(0,7)?'<button type="button" class="ghost sm" data-hm="0">이번 달</button>':'')
+  var first=dDow(r[0]),lead=first,o='<div class="lpbar hmbar"><button type="button" class="nav" data-hm="-1">‹</button><b>'+p[0]+'년 '+Number(p[1])+'월</b><button type="button" class="nav" data-hm="1">›</button>'+(ym!==t.slice(0,7)?'<button type="button" class="ghost sm" data-hm="0">이번 달</button>':'')
     +'<span class="hmleg"><span class="hm hm-hol">공휴일</span><span class="hm hm-off">휴강</span><span class="hm hm-mk">보강</span><span class="hm hm-ev">행사 · 평가</span><span class="hm hm-cls">새 Session</span><span class="hm hm-my">학원 일정</span></span></div>';
-  o+='<div class="hmgrid">'+['월','화','수','목','금','토','일'].map(function(x,i){return '<div class="hmh'+(i>4?' we':'')+'">'+x+'</div>'}).join('');
+  o+='<div class="hmgrid">'+['일','월','화','수','목','금','토'].map(function(x,i){return '<div class="hmh'+(i===0||i===6?' we':'')+'">'+x+'</div>'}).join('');
   for(var i=0;i<lead;i++)o+='<div class="hmd out"></div>';
   for(var d=r[0];d<=r[1];d=addDays(d,1)){var w=dDow(d),L=D[d]||[];o+='<div class="hmd'+(d===t?' now':'')+(w===0||w===6||L.some(function(x){return x.k==='hol'})?' we':'')+(lpAdm()?' ed':'')+'" data-hday="'+d+'"><div class="hmn">'+Number(d.slice(8))+'</div>'+L.map(homeChip).join('')+(L.length>3?'<span class="hmmore">+'+(L.length-3)+'</span>':'')+'</div>'}
   o+='</div>';
