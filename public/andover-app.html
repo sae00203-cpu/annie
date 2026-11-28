@@ -10,7 +10,15 @@
 .lpt th[scope=row]{white-space:nowrap;vertical-align:top}.lpt td{vertical-align:top;min-width:160px;padding:6px!important}
 .lpt .lpc{width:100%;font-size:13px;padding:6px;min-height:0;resize:vertical}.lpt .lpc.hw{margin-top:4px;background:var(--surface2)}
 .lpcn{font-size:16px;margin-right:4px}.hmbar{flex-wrap:wrap}.hmleg{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.hmleg .hm{font-size:11.5px}
-.hmgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px;background:var(--surface)}
+.hmgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;overflow:hidden;margin-top:10px;background:var(--surface)}
+.hmwk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:26px repeat(var(--ln),22px) minmax(60px,auto);border:1px solid var(--line);border-top:0;background:var(--surface);position:relative}
+.hmwk:last-child{border-radius:0 0 12px 12px}
+.hmwk .hmd{min-height:0;border-bottom:0}.hmwk .hmd:nth-child(7){border-right:0}
+.hmsp{height:calc(var(--ln) * 22px);flex:0 0 auto}
+.hmbar2{z-index:1;margin:1px 3px;padding:1px 8px;border-radius:6px;font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid #8a8f99;background:var(--bg);cursor:pointer;align-self:center}
+.hmbar2.cl{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}.hmbar2.cr{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+.hmbar2.hm-off{border-left-color:#8a8f99}.hmbar2:hover{filter:brightness(.97)}
+
 .hmh{padding:8px;text-align:center;font-weight:700;font-size:13px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--line)}.hmh.we{color:var(--bad,#c0392b)}
 .hmd{min-height:118px;padding:6px 6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}.hmd:nth-child(7n){border-right:0}.hmd.out{background:var(--bg)}
 .hmd.now{box-shadow:inset 0 0 0 2px var(--accent)}.hmn{font-weight:700;font-size:13px}.hmd.we .hmn{color:var(--bad,#c0392b)}
@@ -19,11 +27,11 @@
 .hmx{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 2px}
 .hmlist{display:none;margin-top:10px}.hmli{display:grid;grid-template-columns:78px 1fr;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line)}.hmli.now{background:var(--accent-soft)}.hmli>div{display:flex;flex-wrap:wrap;gap:4px}
 .hmd.ed{cursor:pointer}.hmd.ed:hover{background:var(--accent-soft)}.hm.ed{cursor:pointer}.hmhint{margin-top:10px}
-#hmov{position:fixed;inset:0;z-index:300;background:rgba(10,16,30,.45);display:flex;align-items:flex-start;justify-content:center;padding:12vh 12px}#hmov[hidden]{display:none}
+#hmov{position:fixed;inset:0;z-index:300;background:rgba(10,16,30,.45);display:flex;align-items:flex-start;justify-content:center;padding:12vh 12px;overflow-y:auto;-webkit-overflow-scrolling:touch}@media (max-width:760px){#hmov{padding:3vh 8px 18vh}.hmbox{padding:14px;gap:8px}}#hmov[hidden]{display:none}
 .hmbox{background:var(--surface);color:var(--ink,inherit);border-radius:16px;width:min(480px,100%);padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:10px}
 .hmcols{display:flex;flex-wrap:wrap;gap:8px}.hmc{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:0 0 0 1px var(--line)}.hmc.on{border-color:var(--ink,#111);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
 .hm-my{color:inherit}.hmm{opacity:.7;font-size:.9em}.hmr{opacity:.75;margin-right:2px}.hmrep .dws{display:inline-flex;gap:4px}.hmrep .dw{min-width:30px;padding:4px 6px}.hmdl{display:flex;flex-direction:column;gap:6px}.hmdl .hm{font-size:14px;padding:6px 10px;white-space:normal}.hmvd{margin:0;color:var(--muted)}#hmTm,#hmTm2{width:auto}
-@media (max-width:760px){.hmgrid{border-radius:10px;margin-top:8px}.hmh{padding:5px 0;font-size:12px}.hmd{min-height:68px;padding:3px 2px 4px;gap:2px}.hmn{font-size:12px;padding-left:2px}.hmd .hm{font-size:10px;padding:1px 3px;border-left-width:2px;white-space:nowrap;border-radius:4px;line-height:1.3}.hmd .hm:nth-of-type(n+4){display:none}.hmd .hmmore{display:block}.hmleg{display:none}.hmlist{display:block;margin-top:14px}.hmd .hmm{display:none}.hmd .hm b{display:none}}
+@media (max-width:760px){.hmwk{grid-template-rows:22px repeat(var(--ln),16px) minmax(40px,auto)}.hmsp{height:calc(var(--ln) * 16px)}.hmbar2{font-size:10px;line-height:13px;padding:0 4px;margin:1px 1px}.hmbar2 b{display:none}.hmgrid{margin-top:8px}.hmh{padding:5px 0;font-size:12px}.hmd{min-height:68px;padding:3px 2px 4px;gap:2px}.hmn{font-size:12px;padding-left:2px}.hmd .hm{font-size:10px;padding:1px 3px;border-left-width:2px;white-space:nowrap;border-radius:4px;line-height:1.3}.hmd .hm:nth-of-type(n+4){display:none}.hmd .hmmore{display:block}.hmleg{display:none}.hmlist{display:block;margin-top:14px}.hmd .hmm{display:none}.hmd .hm b{display:none}}
 .hmmore{display:none;font-size:10px;color:var(--muted);padding-left:3px}
 .lpnt{margin:10px 0 4px}.dupwarn{border-color:var(--warn);background:var(--warn-soft);display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}.dupg tr.now{background:var(--accent-soft)}.rsbox tr.now{background:var(--warn-soft)}.orow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.orow>div{flex:1 1 280px}.cbev th{text-align:left!important;font-size:13px;color:var(--muted);background:var(--bg)!important}.lpev>div{flex:1}.lpslot{margin:8px 0 0}.lpslot.warn{color:var(--warn)}.lpevr{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 14px 6px 0}.lpevr select{width:auto}.cplan{flex-wrap:wrap;gap:8px}.cplan .tx{width:auto}.cren{margin:4px 0;color:var(--accent)}.plsched summary{cursor:pointer}.plsg{margin:8px 0 4px}.plsr{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:4px 0 4px 14px;border-bottom:1px dashed var(--line)}.plsr .linkbtn{margin-left:auto}.plres{font-size:12.5px;color:var(--accent);margin-left:6px}.plsched{border-color:var(--accent);background:var(--accent-soft);margin-bottom:10px}.stlist li.fut{opacity:.85}.futd{color:var(--accent);font-weight:700;font-size:11px}.cls.endtg{border-style:dashed;color:var(--muted);font-weight:600}.dupsel{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}.dupsel label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px;flex:1 1 260px}.duparr{font-size:20px;padding-bottom:8px}.lpbar button{white-space:nowrap}.dowwarn{flex-basis:100%;color:var(--warn);font-size:13px;font-weight:600}.sest td,.sest th{padding:4px 8px!important}.sest input[type=date]{width:auto;min-width:150px}.sest tr.now{background:var(--accent-soft)}.lpnt label{display:block}.lpnt textarea{width:100%;margin-top:6px;background:var(--warn-soft);color:var(--ink);border-color:var(--warn,#c98a1a)}.lpv{display:grid;gap:12px;margin-top:10px}.lpvc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}.lpvc.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}.lpvc.past{opacity:.8}.lpvh{margin-bottom:8px;font-size:15px}.lpvg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.lpvb{border-left:3px solid var(--accent);padding:2px 0 2px 10px}.lpvk{font-weight:700;font-size:13px;color:var(--accent)}.lpvl{font-size:14px;margin:2px 0}.lpvw{font-size:13px;color:var(--muted)}.lpvw small,.lpvx small,.lpvd small{display:block;font-weight:600;color:var(--muted);font-size:11.5px}.lpvx{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px}.lpvd{display:block;margin-top:10px}.lpvd textarea{width:100%;background:var(--accent-soft)}.lpcnt{display:inline-flex;flex-wrap:wrap;gap:6px 10px;align-items:center}.lpwds{display:inline-flex;gap:6px}.lpwds .ck{margin:0}.lpyp{margin:10px 0}.lpcat td{padding:6px!important}.lpcat .catc{width:34px;text-align:center}details.lpgrp{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--surface)}details.lpgrp>summary{cursor:pointer;padding:10px 14px;font-size:15px}details.lpgrp[open]>summary{border-bottom:1px solid var(--line)}details.lpgrp>.pls,details.lpgrp>.tw{padding:10px 12px}.lpcat .catc input{width:18px;height:18px}.lpcat td:nth-child(2) .tx{min-width:240px}.lpcat select.tx{min-width:96px}.lpcat .tx.n{width:72px}.lpcat .tx.n2{width:110px}.lppick{min-width:240px;max-width:340px}.lpcat td:nth-child(7) .tx{min-width:180px}.lpcat td:nth-child(8) .tx{min-width:210px}.lpcat td:nth-child(10) .tx{min-width:210px}.lpyp .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);font-size:13px}.lpsyl{margin:10px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px}.lpsyl .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 10px;border-radius:999px;background:var(--accent-soft);font-size:13px}.filebtn{cursor:pointer;display:inline-flex;align-items:center}.lpt td{min-width:200px}@media (max-width:760px){.lpcn{display:none}}.lpt th.lpdh,.lpt td.lpd{min-width:240px;background:var(--accent-soft)}.lpt .lpc[readonly]{background:transparent;border-color:transparent;resize:none}
 details.lpr>summary{cursor:pointer;font-weight:700}.lpgo{margin:10px 0 14px}
@@ -977,7 +985,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-34</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-35</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4585,9 +4593,9 @@ function yrAuto(){var t=today();if(!ready()||!S.classes.length||(S.mode==='db'&&
 /* ---------- 월간 일정 (첫 화면): 공휴일 · 휴강 · 보강 · 행사(Voca King 등) · 정기평가 · 반 바뀜 · 학원 일정 ---------- */
 S.home={ym:''};
 function homeItems(ym){
-  var r=calRange(ym),D={},add=function(d,k,t){if(d<r[0]||d>r[1])return;var L=(D[d]=D[d]||[]),ti=t.split('\u0002')[0],o=L.find(function(x){return x.k===k&&x.t.split('\u0002')[0]===ti});if(o&&k!=='my'){var a=o.t.split('\u0002'),b=t.split('\u0002');o.t=a[0]+'\u0002'+[a[1],b[1]].filter(Boolean).join(', ');return}L.push({k:k,t:t})};
+  var r=calRange(ym),D={},SP=[],add=function(d,k,t){if(d<r[0]||d>r[1])return;var L=(D[d]=D[d]||[]),ti=t.split('\u0002')[0],o=L.find(function(x){return x.k===k&&x.t.split('\u0002')[0]===ti});if(o&&k!=='my'){var a=o.t.split('\u0002'),b=t.split('\u0002');o.t=a[0]+'\u0002'+[a[1],b[1]].filter(Boolean).join(', ');return}L.push({k:k,t:t})};
   for(var d=r[0];d<=r[1];d=addDays(d,1)){var hn=holName(d);if(hn&&!(S.cfg.hOff||{})[d])add(d,'hol',hn)}
-  (S.cfg.closures||[]).forEach(function(x){if(!x.from)return;var ids=x.cids||[],who=ids.length?ids.map(clsName).join(', '):'전체';for(var d=x.from;d<=(x.to||x.from);d=addDays(d,1))add(d,'off',(x.name||'휴강')+'\u0002'+who)});
+  (S.cfg.closures||[]).forEach(function(x){if(!x.from)return;var ids=x.cids||[],who=ids.length?ids.map(clsName).join(', '):'전체';if(x.to&&x.to>x.from){SP.push({s:x.from,e:x.to,it:{k:'off',t:(x.name||'휴강')+'\u0002'+who+' · '+md(x.from)+' ~ '+md(x.to)}});return}add(x.from,'off',(x.name||'휴강')+'\u0002'+who)});
   (S.cfg.makeups||[]).forEach(function(m){if(m.date)add(m.date,'mk','보강 · '+clsName(m.cid))});
   var ev={};S.plans.forEach(function(pl){if(!pl||!pl.date||pl.date<r[0]||pl.date>r[1])return;if(!S.classes.some(function(c){return c.id===pl.classId}))return;(pl.blocks||[]).forEach(function(b){if(lpdGroup(b)!=='행사')return;var k=pl.date+'|'+evName(b.book);(ev[k]=ev[k]||[]).push(clsNameAt(S.classes.find(function(c){return c.id===pl.classId}),pl.date))})});
   Object.keys(ev).forEach(function(k){var q=k.split('|');add(q[0],'ev',q[1]+'\u0002'+ev[k].filter(function(x,i,a){return a.indexOf(x)===i}).join(', '))});
@@ -4597,8 +4605,9 @@ function homeItems(ym){
   plScheds().forEach(function(x){cl(x.d,'반 편성 '+Object.keys(x.map||{}).length+'명')});
   Object.keys(CL).forEach(function(d){add(d,'cls',d.slice(0,4)+' 새 Session 시작\u0002'+CL[d].join('\n'))});
   (S.cfg.cal||[]).forEach(function(x,i){if(!x.d)return;var put=function(d){(D[d]=D[d]||[]).push({k:'my',t:x.t,i:i,c:x.c||'',tm:x.tm||'',memo:x.memo||'',rep:!!x.rep})};
-    if(!x.rep){for(var d=x.d;d<=(x.to||x.d);d=addDays(d,1))put(d);return}
+    if(!x.rep){if(x.to&&x.to>x.d){SP.push({s:x.d,e:x.to,it:{k:'my',t:x.t,i:i,c:x.c||'',tm:x.tm||'',memo:x.memo||''}});return}put(x.d);return}
     for(var d2=(x.d>r[0]?x.d:r[0]);d2<=r[1]&&(!x.until||d2<=x.until);d2=addDays(d2,1)){if(calRepHit(x,d2))put(d2)}});
+  D.__sp=SP.filter(function(s){return s.e>=r[0]&&s.s<=r[1]});
   return D;
 }
 var HM_COL=[['','기본'],['#e53935','빨강'],['#fb8c00','주황'],['#fbc02d','노랑'],['#43a047','초록'],['#1e88e5','파랑'],['#8e24aa','보라'],['#ec407a','분홍'],['#757575','회색']];
@@ -4611,10 +4620,23 @@ function renderHome(){
   var H=S.home;if(!H.ym)H.ym=today().slice(0,7);var ym=H.ym,p=ym.split('-'),D=homeItems(ym),r=calRange(ym),t=today();
   var first=dDow(r[0]),lead=first,o='<div class="lpbar hmbar"><button type="button" class="nav" data-hm="-1">‹</button><b>'+p[0]+'년 '+Number(p[1])+'월</b><button type="button" class="nav" data-hm="1">›</button>'+(ym!==t.slice(0,7)?'<button type="button" class="ghost sm" data-hm="0">이번 달</button>':'')
     +'<span class="hmleg"><span class="hm hm-hol">공휴일</span><span class="hm hm-off">휴강</span><span class="hm hm-mk">보강</span><span class="hm hm-ev">행사 · 평가</span><span class="hm hm-cls">새 Session</span><span class="hm hm-my">학원 일정</span></span></div>';
-  o+='<div class="hmgrid">'+['일','월','화','수','목','금','토'].map(function(x,i){return '<div class="hmh'+(i===0||i===6?' we':'')+'">'+x+'</div>'}).join('');
-  for(var i=0;i<lead;i++)o+='<div class="hmd out"></div>';
-  for(var d=r[0];d<=r[1];d=addDays(d,1)){var w=dDow(d),L=D[d]||[];o+='<div class="hmd'+(d===t?' now':'')+(w===0||w===6||L.some(function(x){return x.k==='hol'})?' we':'')+(lpAdm()?' ed':'')+'" data-hday="'+d+'"><div class="hmn">'+Number(d.slice(8))+'</div>'+L.map(homeChip).join('')+(L.length>3?'<span class="hmmore">+'+(L.length-3)+'</span>':'')+'</div>'}
-  o+='</div>';
+  var SPN=D.__sp||[];delete D.__sp;
+  o+='<div class="hmgrid">'+['일','월','화','수','목','금','토'].map(function(x,i){return '<div class="hmh'+(i===0||i===6?' we':'')+'">'+x+'</div>'}).join('')+'</div>';
+  var ws=addDays(r[0],-lead);
+  for(var wk=0;ws<=r[1];wk++,ws=addDays(ws,7)){
+    var we=addDays(ws,6),lanes=[],bars='';
+    SPN.filter(function(s){return s.e>=ws&&s.s<=we}).sort(function(a,b){return a.s<b.s?-1:a.s>b.s?1:(b.e>a.e?1:-1)}).forEach(function(s){
+      var a=s.s<ws?ws:s.s,b=s.e>we?we:s.e;if(a<r[0])a=r[0];if(b>r[1])b=r[1];if(a>b)return;var c1=dDow(a),c2=dDow(b),ln=0;
+      while(lanes[ln]&&lanes[ln].some(function(x){return !(c2<x[0]||c1>x[1])}))ln++;(lanes[ln]=lanes[ln]||[]).push([c1,c2]);
+      var it=s.it,cc=it.k==='my'?(it.c||'#9c27b0'):'',ttl=String(it.t).split('\u0002')[0],tip=String(it.t).split('\u0002')[1]||'';
+      bars+='<div class="hmbar2 hm-'+it.k+(s.s<a?' cl':'')+(s.e>b?' cr':'')+'" style="grid-column:'+(c1+1)+' / '+(c2+2)+';grid-row:'+(2+ln)+(cc?';border-left-color:'+cc+';background:'+cc+'26':'')+'"'+(it.k==='my'?' data-hedit="'+it.i+'"':' data-htip="'+esc(tip)+'" data-httl="'+esc(ttl)+'"')+' role="button" tabindex="0" title="'+esc(ttl+(tip?' · '+tip:''))+'">'+(it.tm?'<b>'+esc(it.tm)+'</b> ':'')+esc(ttl)+'</div>'});
+    var nl=lanes.length;
+    o+='<div class="hmwk" style="--ln:'+nl+'">';
+    for(var c=0;c<7;c++){var d=addDays(ws,c),inm=d>=r[0]&&d<=r[1],L=inm?(D[d]||[]):[],w=c;
+      o+='<div class="hmd'+(inm?'':' out')+(d===t?' now':'')+(w===0||w===6||L.some(function(x){return x.k==='hol'})?' we':'')+(lpAdm()&&inm?' ed':'')+'" style="grid-column:'+(c+1)+';grid-row:1 / span '+(nl+2)+'"'+(inm?' data-hday="'+d+'"':'')+'><div class="hmn">'+(inm?Number(d.slice(8)):'')+'</div><div class="hmsp"></div>'+L.map(homeChip).join('')+(L.length>3?'<span class="hmmore">+'+(L.length-3)+'</span>':'')+'</div>'}
+    o+=bars+'</div>';
+  }
+  SPN.forEach(function(s){var d0=s.s<r[0]?r[0]:s.s,it=Object.assign({},s.it);if(it.k==='my')it.t=it.t;else it.t=String(it.t).split('\u0002')[0]+'\u0002'+(String(it.t).split('\u0002')[1]||'');(D[d0]=D[d0]||[]).push(Object.assign(it,{span:md(s.s)+' ~ '+md(s.e)}))});
   var days=Object.keys(D).sort();
   o+='<div class="hmlist">'+(days.length?days.map(function(d){return '<div class="hmli'+(d===t?' now':'')+'" data-hday="'+d+'"><b>'+md(d)+' '+DOW[dDow(d)]+'</b><div>'+D[d].map(homeChip).join('')+'</div></div>'}).join(''):'<p class="hint">이 달 일정이 없어요.</p>')+'</div>';
   if(lpAdm())o+='<p class="hint hmhint">날짜를 누르면 학원 일정을 넣을 수 있어요. 넣은 일정을 누르면 고치거나 지워요. 휴강 · 보강 · 공휴일 · Voca King · 정기평가 · 새 Session은 다른 화면에서 정한 대로 자동으로 보여요.</p>';
