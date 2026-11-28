@@ -959,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-8</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-9</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -3881,6 +3881,7 @@ function histHTML(){
     +(window.ANDOVER_CLOUD?'<p class="hint">더하기 전에 계정 · 데이터 → 백업 파일 내려받기를 한 번 해 두면 안심이에요.</p>':'')+'</div>';
   return o;
 }
+function histWt(n){var L=wtTypes(),id='h'+n;if(L.some(function(t){return t.id===id}))return;S.cfg.wtTypes=L.concat([{id:id,n:'같은 날 '+n+'번째 시험',lv:'-'}]);S.histCfg=true}
 function histPlan(rows){
   var norm=function(s){return String(s||'').replace(/\s+/g,'').toLowerCase()},byName={};
   S.students.forEach(function(s){(byName[norm(s.name)]=byName[norm(s.name)]||[]).push(s)});
@@ -3892,13 +3893,19 @@ function histPlan(rows){
     var s=pick(r),lab=String(r.name||'')+(r.ename?' ('+r.ename+')':'');
     if(s==='many'){many[lab]=(many[lab]||0)+1;return}
     var cid=s&&classAt(s,r.date);if(!s||!cid){un[lab]=(un[lab]||0)+1;return}
-    var id=cid+'_'+r.date+'_'+r.kind,g=G[id]||(G[id]={classId:cid,date:r.date,kind:r.kind,max:{},range:{},scores:{}});
+    var base=cid+'_'+r.date+'_'+r.kind,rk=String(r.range||'').slice(0,40),id=base+'§'+rk,g=G[id]||(G[id]={base:base,classId:cid,date:r.date,kind:r.kind,max:{},range:{},scores:{}});
     g.scores[s.id]=r.v;if(r.max)g.max[r.max]=(g.max[r.max]||0)+1;if(r.range)g.range[String(r.range).slice(0,40)]=1;
   });
+  /* 같은 날 시험이 여러 개면(같은 학생 점수가 둘): 첫 시험은 그대로, 나머지는 '같은 날 n번째 시험'으로 따로 */
+  var byB={},G2={};Object.keys(G).forEach(function(k){(byB[G[k].base]=byB[G[k].base]||[]).push(G[k])});
+  Object.keys(byB).forEach(function(b){var L=byB[b],clash=false,seen={};L.forEach(function(g){Object.keys(g.scores).forEach(function(s){if(seen[s])clash=true;seen[s]=1})});
+    if(!clash||L.length<2){var m=L[0];L.slice(1).forEach(function(g){Object.assign(m.scores,g.scores);Object.keys(g.max).forEach(function(x){m.max[x]=(m.max[x]||0)+g.max[x]});Object.assign(m.range,g.range)});G2[b]=m;return}
+    L.forEach(function(g,i){if(i){g.wt='h'+(i+1);G2[b+'-h'+(i+1)]=g;histWt(i+1)}else G2[b]=g})});
+  G=G2;
   var docs=[],made=0,add=0,kept=0;
   Object.keys(G).forEach(function(id){
     var g=G[id],d0=S.tests.get(id),doc=d0?JSON.parse(JSON.stringify(d0)):null,mx=Number((Object.keys(g.max).sort(function(a,b){return g.max[b]-g.max[a]})[0])||0)||0,ch=false;
-    if(!doc){doc={classId:g.classId,date:g.date,kind:g.kind,list:'',range:Object.keys(g.range).join(', ').slice(0,100),max:mx,scores:{},src:'history'};made++}
+    if(!doc){doc={classId:g.classId,date:g.date,kind:g.kind,list:'',range:Object.keys(g.range).join(', ').slice(0,100),max:mx,scores:{},src:'history'};if(g.wt)doc.wt=g.wt;made++}
     doc.scores=doc.scores||{};
     Object.keys(g.scores).forEach(function(sid){if(doc.scores[sid]!==undefined){kept++;return}doc.scores[sid]=g.scores[sid];add++;ch=true});
     if(!ch)return;if(!doc.max&&mx)doc.max=mx;docs.push({id:id,doc:doc});
@@ -3913,7 +3920,7 @@ document.addEventListener('click',function(e){
   var t=e.target;if(!t.closest||!t.closest('#v-manage'))return;
   if(t.closest('#histNo')){S.hist0=null;renderManage();return}
   if(t.closest('#histGo')&&S.hist0){var P=S.hist0,now=new Date().toISOString();P.docs.forEach(function(x){x.doc.savedAt=now;S.tests.set(x.id,x.doc);write('tests/'+x.id,x.doc,'t'+x.id)});
-    toast(P.add+'개 점수를 더했어요');S.hist0=null;renderManage()}
+    if(S.histCfg){cfgPut();S.histCfg=false}toast(P.add+'개 점수를 더했어요');S.hist0=null;renderManage()}
 });
 /* ---------- 레슨플랜 만들기: 교재마다 진도 규칙 → 한 달 자동 채우기 → 날짜별로 고치기 → 엑셀 ----------
  * 만든 계획은 엑셀로 올린 수업계획과 같은 모양(plans)으로 저장돼서 오늘 수업 · 코칭 · 온라인 · 월간 평가에 그대로 쓰여요. */
