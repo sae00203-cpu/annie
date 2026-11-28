@@ -3039,7 +3039,7 @@ function sessRange(ym,c){
       while(cur<ym){
         cur=shiftMonth(cur,1);
         if(c.sess[cur]){end=c.sess[cur][1];r=c.sess[cur];continue}
-        var st=dAdd(end,1),n=0,d=st,g=0;
+        var st=dAdd(end,1),g0=0;while(g0++<60&&!(meetsOn(c,st)&&!offInfo(st,c)))st=dAdd(st,1);var n=0,d=st,g=0;
         while(g++<120){if(meetsOn(c,d)&&!offInfo(d,c)){n++;if(n>=sessN(c))break}d=dAdd(d,1)}
         end=d;r=[st,end];
       }
@@ -4002,8 +4002,8 @@ function lpSylHTML(b,i){
 S.yp0=null;
 function ypNorm(s){return String(s||'').split('(')[0].toLowerCase().replace(/\bws\b/g,'wonderskills').replace(/\binter\b/g,'intermediate').replace(/tropy/g,'trophy').replace(/gramamr/g,'grammar').replace(/[^a-z0-9가-힣]+/g,' ').trim()}
 function ypSame(a,b){a=ypNorm(a);b=ypNorm(b);return !!a&&!!b&&(a===b||a.indexOf(b+' ')===0||b.indexOf(a+' ')===0)}
-function ypYear(){var t=today(),y=+t.slice(0,4);return +t.slice(5,7)>=3?y:y-1}
-function ypYm(y,m){return (m>=3?y:y+1)+'-'+pad(m)}
+function ypYear(){return +today().slice(0,4)}
+function ypYm(y,m){return y+'-'+pad(m)}
 function ypGuessCls(s){
   var toks=(String(s).match(/PM[a-z]|[A-Z]\d[a-z]?(?:-\d)?/g)||[]).map(function(x){return x.toLowerCase()}),tm=(String(s).match(/(\d)[:]?(\d\d)\s*[~-]/)||[]),best='',bs=0;
   S.classes.forEach(function(c){var nm=c.name.toLowerCase(),k=nm.split(/[\s(]/)[0],sc=0;
@@ -4038,12 +4038,15 @@ function ypParse(wb){
 function ypShift(books,dy){return (books||[]).map(function(b){var m={};Object.keys(b.months||{}).forEach(function(k){m[(+k.slice(0,4)+dy)+k.slice(4)]=b.months[k]});return Object.assign({},b,{months:m})})}
 function ypShiftTot(t,dy){var m={};Object.keys(t||{}).forEach(function(k){m[(+k.slice(0,4)+dy)+k.slice(4)]=t[k]});return m}
 document.addEventListener('change',function(e){var t=e.target;
-  if(t.id==='ypYr'&&S.yp0){var dy=+t.value-S.yp0.year;if(!dy)return;S.yp0.sheets.forEach(function(s){s.books=ypShift(s.books,dy);s.tot=ypShiftTot(s.tot,dy)});S.yp0.year=+t.value;toast(t.value+'.3 ~ '+(+t.value+1)+'.2 로 바꿨어요');return}
-  if(t.dataset&&t.dataset.ypyr!=null){var d=S.yplan.get(t.dataset.ypyr);if(!d)return;var y0=d.year||ypYear(),dy2=+t.value-y0;if(!dy2)return;d=Object.assign({},d,{year:+t.value,books:ypShift(d.books,dy2),tot:ypShiftTot(d.tot,dy2)});S.yplan.set(d.classId,d);write('yplan/'+d.classId,d,'z'+d.classId);toast(clsName(d.classId)+': '+t.value+'.3 ~ '+(+t.value+1)+'.2 로 옮겼어요');lpRe()}});
+  if(t.id==='ypYr'&&S.yp0){var dy=+t.value-S.yp0.year;if(!dy)return;S.yp0.sheets.forEach(function(s){s.books=ypShift(s.books,dy);s.tot=ypShiftTot(s.tot,dy)});S.yp0.year=+t.value;toast(t.value+'년 1~12월로 바꿨어요');return}
+  if(t.dataset&&t.dataset.ypyr!=null){var d=S.yplan.get(t.dataset.ypyr);if(!d)return;var y0=d.year||ypYear(),dy2=+t.value-y0;if(!dy2)return;d=Object.assign({},d,{year:+t.value,books:ypShift(d.books,dy2),tot:ypShiftTot(d.tot,dy2)});S.yplan.set(d.classId,d);write('yplan/'+d.classId,d,'z'+d.classId);toast(clsName(d.classId)+': '+t.value+'년으로 옮겼어요');lpRe()}});
 var EV_LIST=['Voca King','정기평가',"Children's day",'Christmas','낭독 콘서트','Market Day','PBL','100 Days','Halloween'];
 function ypIsEv(x){return !ypIsBook(x)&&!/스피킹\s*인증|^scp/i.test(x.book||'')}
 function evName(n){var s=String(n||'').replace(/\s+/g,' ').trim();if(/voca\s*king|보카\s*킹/i.test(s))return 'Voca King';if(/정기\s*평가/.test(s))return '정기평가';return s}
 function evOpts(cur){var c=evName(cur),L=EV_LIST.slice();if(c&&L.indexOf(c)<0)L.push(c);return L.map(function(n){return '<option'+(n===c?' selected':'')+'>'+esc(n)+'</option>'}).join('')}
+function ypCalFix(){S.yplan.forEach(function(d,k){if(!d||k==='_cat'||d.cal||!d.year||d.title==='반 관리에서 입력')return;var y1=String(d.year+1);
+  var mv=function(o){var m={};Object.keys(o||{}).forEach(function(x){var mm=x.slice(5);m[(x.slice(0,4)===y1&&(mm==='01'||mm==='02'))?d.year+'-'+mm:x]=o[x]});return m};
+  var n=Object.assign({},d,{cal:1,books:(d.books||[]).map(function(b){return Object.assign({},b,{months:mv(b.months)})}),tot:mv(d.tot)});S.yplan.set(k,n);write('yplan/'+k,n,'z'+k)})}
 function ypIsBook(x){return !!x.sec&&!/스피킹\s*인증|^pbl|activit/i.test(x.sec+' '+x.book)}
 function ypMonth(YP,ym){return (YP.books||[]).filter(function(x){return x.months&&x.months[ym]>0}).map(function(x){return Object.assign({n:x.months[ym]},x)})}
 function lpCatOf(n){return ypCat().filter(function(c){return ypSame(c.name,n)}).sort(function(a,c){return c.name.length-a.name.length})[0]}
@@ -4073,7 +4076,7 @@ function ypBoxHTML(c,ym){
 function ypPrevHTML(){
   var P=S.yp0;if(!P)return '';
   var opt=function(v){return '<option value="">연결 안 함</option>'+S.classes.map(function(c){return '<option value="'+esc(c.id)+'"'+(c.id===v?' selected':'')+'>'+esc(c.name)+'</option>'}).join('')};
-  return '<div class="vbox lpyp"><div class="fl" style="margin-top:0">연간 교재 계획 미리 보기</div><label class="ypyr">학년도 <select class="tx" id="ypYr">'+[P.year-2,P.year-1,P.year,P.year+1,P.year+2].map(function(y){return '<option value="'+y+'"'+(y===P.year?' selected':'')+'>'+y+'.3 ~ '+(y+1)+'.2</option>'}).join('')+'</select></label>'
+  return '<div class="vbox lpyp"><div class="fl" style="margin-top:0">연간 교재 계획 미리 보기</div><label class="ypyr">연도 <select class="tx" id="ypYr">'+[P.year-2,P.year-1,P.year,P.year+1,P.year+2].map(function(y){return '<option value="'+y+'"'+(y===P.year?' selected':'')+'>'+y+'년 (1~12월)</option>'}).join('')+'</select></label>'
     +'<p class="hint">시트마다 어느 반인지 확인해 주세요. 교재 목록 '+P.cat.length+'권 · 영상 규칙 '+P.vids.length+'개도 같이 넣어요.</p>'
     +'<div class="tw"><table class="rt"><thead><tr><th>시트</th><th>반</th><th>교재</th></tr></thead><tbody>'
     +P.sheets.map(function(s,i){return '<tr><td>'+esc(s.title)+'<br><small class="muted">'+esc(s.sheet)+'</small></td><td><select class="tx" data-ypc="'+i+'">'+opt(s.cid)+'</select></td><td><small>'+s.books.filter(ypIsBook).map(function(x){return esc(x.book.split('(')[0].trim())}).join(', ')+'</small></td></tr>'}).join('')
@@ -4081,7 +4084,7 @@ function ypPrevHTML(){
 }
 /* ---------- 설정 → 레슨플랜 기준: 교재 목록 · Syllabus · 연간 교재 계획 ---------- */
 var LP_UT=['Unit','Story','Module','Lesson','Day'];
-function lpCfgHTML(){
+function lpCfgHTML(){ypCalFix();
   var cat=ypCat(),cls=Array.from(S.yplan.keys()).filter(function(k){return k!=='_cat'}).map(function(k){return S.yplan.get(k)});
   var o='<h2 class="sechd">레슨플랜 기준</h2><p class="hint">레슨플랜 만들기에서 쓰는 기준이에요. 여기서 고치면 모든 반에 같이 적용돼요.</p>';
   o+=ypPrevHTML();
@@ -4089,7 +4092,7 @@ function lpCfgHTML(){
   o+='<div class="vbox"><div class="fl" style="margin-top:0">연간 교재 계획 <span class="muted">반마다 달별 교재 시수</span></div>'
     +'<p class="hint" style="margin-top:0">교재 정리 엑셀(반별 시트 · Book 시트 · 영상 규칙)을 올리면 반마다 달별 시수, 교재 목록, 영상 규칙이 같이 들어가요.</p>'
     +'<div class="row2" style="margin-top:0"><label class="ghost sm filebtn">+ 연간 계획 올리기<input type="file" id="ypF" accept=".xlsx,.xls" hidden></label></div>'
-    +(cls.length?'<div class="tw"><table class="rt"><thead><tr><th>반</th><th>시트</th><th>학년도</th><th>올린 날</th><th></th></tr></thead><tbody>'+cls.sort(function(a,b){return clsName(a.classId).localeCompare(clsName(b.classId))}).map(function(d){return '<tr><td><b>'+esc(clsName(d.classId))+'</b></td><td>'+esc(d.title||d.sheet||'')+'</td><td>'+(d.title==='반 관리에서 입력'?'':'<select class="tx" data-ypyr="'+esc(d.classId)+'" style="width:auto">'+[0,1,2,3,4].map(function(k){var y=(d.year||ypYear())-2+k;return '<option value="'+y+'"'+(y===(d.year||ypYear())?' selected':'')+'>'+y+'.3~'+(y+1)+'.2</option>'}).join('')+'</select>')+'</td><td><small class="muted">'+esc(String(d.at||'').slice(0,10))+'</small></td><td><button type="button" class="ghost sm danger" data-ypdel="'+esc(d.classId)+'">빼기</button></td></tr>'}).join('')+'</tbody></table></div>':'<p class="hint">아직 올린 연간 계획이 없어요.</p>')+'</div>';
+    +(cls.length?'<div class="tw"><table class="rt"><thead><tr><th>반</th><th>시트</th><th>연도</th><th>올린 날</th><th></th></tr></thead><tbody>'+cls.sort(function(a,b){return clsName(a.classId).localeCompare(clsName(b.classId))}).map(function(d){return '<tr><td><b>'+esc(clsName(d.classId))+'</b></td><td>'+esc(d.title||d.sheet||'')+'</td><td>'+(d.title==='반 관리에서 입력'?'':'<select class="tx" data-ypyr="'+esc(d.classId)+'" style="width:auto">'+[0,1,2,3,4].map(function(k){var y=(d.year||ypYear())-2+k;return '<option value="'+y+'"'+(y===(d.year||ypYear())?' selected':'')+'>'+y+'년</option>'}).join('')+'</select>')+'</td><td><small class="muted">'+esc(String(d.at||'').slice(0,10))+'</small></td><td><button type="button" class="ghost sm danger" data-ypdel="'+esc(d.classId)+'">빼기</button></td></tr>'}).join('')+'</tbody></table></div>':'<p class="hint">아직 올린 연간 계획이 없어요.</p>')+'</div>';
   // Syllabus
   o+='<div class="vbox"><div class="fl" style="margin-top:0">Syllabus <span class="muted">교재 회차별 Class Work · Homework</span></div>'
     +'<p class="hint" style="margin-top:0">Unit · Class Work · Homework 열이 있는 엑셀이에요. 여러 파일 · 여러 시트를 한 번에 올려도 돼요.</p>'
@@ -4290,7 +4293,7 @@ function cbOpts(cur){
   if(cur&&!hit)o+='<option value="'+esc(cur)+'" selected>'+esc(cur.split('(')[0].trim())+'</option>';
   return o;
 }
-function clsBooksHTML(c){
+function clsBooksHTML(c){ypCalFix();
   if(!lpAdm())return '';
   var d=cbDoc(c),Y=S.cbY||+today().slice(0,4),cur=today().slice(0,7),MS=[1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){return Y+'-'+pad(m)}),L=(d.books||[]).map(function(x,i){return {x:x,i:i}}).filter(function(o){return ypIsBook(o.x)}),E=(d.books||[]).map(function(x,i){return {x:x,i:i}}).filter(function(o){return ypIsEv(o.x)});
   var sel=function(i,ym,v){var o='<select class="tx cbn" data-cbm="'+i+'|'+ym+'"><option value="">-</option>';for(var n=1;n<=31;n++)o+='<option'+(n===+v?' selected':'')+'>'+n+'</option>';return o+'</select>'};
@@ -4540,7 +4543,7 @@ document.addEventListener('click',function(e){
   var sd=t.closest('[data-syldel]');if(sd&&confirmStep('syldel'+sd.dataset.syldel,sd,'한 번 더')){S.syl.delete(sd.dataset.syldel);write('syl/'+sd.dataset.syldel,null,'y'+sd.dataset.syldel);toast('지웠어요');lpRe();return}
   if(t.closest('#ypNo')){S.yp0=null;lpRe();return}
   if(t.closest('#ypGo')&&S.yp0){var P=S.yp0,n=0,now=new Date().toISOString();
-    P.sheets.forEach(function(s){if(!s.cid)return;var d={classId:s.cid,sheet:s.sheet,title:s.title,year:P.year,books:s.books,tot:s.tot,at:now};S.yplan.set(s.cid,d);write('yplan/'+s.cid,d,'z'+s.cid);n++});
+    P.sheets.forEach(function(s){if(!s.cid)return;var d={classId:s.cid,sheet:s.sheet,title:s.title,year:P.year,cal:1,books:s.books,tot:s.tot,at:now};S.yplan.set(s.cid,d);write('yplan/'+s.cid,d,'z'+s.cid);n++});
     if(P.cat.length)catMerge(P.cat);
     if(P.vids.length){var V=(S.cfg.vhw||[]).filter(function(r){return !P.vids.some(function(x){return ypNorm(x.book)===ypNorm(r.book)})});S.cfg.vhw=V.concat(P.vids);cfgPut()}
     S.yp0=null;toast(n+'개 반 연간 계획을 저장했어요');lpRe();return}
