@@ -47,7 +47,7 @@
   function docId(c, id) { return encodeURIComponent(keyOf(c, id)).replace(/\./g, '%2E'); }
   function absorb(d) {
     var x = d.data(); if (!x || typeof x.c !== 'string') return;
-    seq++; mem.set(keyOf(x.c, x.id), { c: x.c, id: String(x.id), json: x.json || '', del: !!x.del, by: x.by || '', s: seq });
+    seq++; mem.set(keyOf(x.c, x.id), { c: x.c, id: String(x.id), json: x.json || '', del: !!x.del, by: x.by || '', s: seq, old: x.old || '', at: x.t && x.t.toMillis ? x.t.toMillis() : 0 });
     if (x.t && (!maxT || x.t.toMillis() > maxT.toMillis())) maxT = x.t;
   }
 
@@ -127,9 +127,10 @@
       for (var i = 0; i < list.length; i += 400) {
         var b = db.batch();
         list.slice(i, i + 400).forEach(function (op) {
-          var del = op.json === null || op.json === undefined, js = del ? '' : String(op.json);
-          b.set(DOCS.doc(docId(op.c, op.id)), { c: op.c, id: String(op.id), json: js, del: del, by: me.name, t: firebase.firestore.FieldValue.serverTimestamp() });
-          seq++; mem.set(keyOf(op.c, op.id), { c: op.c, id: String(op.id), json: js, del: del, by: me.name, s: seq });
+          var del = op.json === null || op.json === undefined, js = del ? '' : String(op.json), pv = mem.get(keyOf(op.c, op.id)), old = del ? ((pv && (pv.json || pv.old)) || '') : '';
+          /* 지울 때도 바로 전 내용은 old 에 남겨 둬요 (휴지통에서 되살리기) */
+          b.set(DOCS.doc(docId(op.c, op.id)), { c: op.c, id: String(op.id), json: js, del: del, old: old, by: me.name, t: firebase.firestore.FieldValue.serverTimestamp() });
+          seq++; mem.set(keyOf(op.c, op.id), { c: op.c, id: String(op.id), json: js, del: del, by: me.name, s: seq, old: old, at: Date.now() });
         });
         ps.push(b.commit());
       }
@@ -196,6 +197,8 @@
       var docs = {}; mem.forEach(function (d) { docs[keyOf(d.c, d.id)] = { t: d.s, del: d.del, by: d.by, json: d.json }; });
       return { version: 1, made: new Date().toISOString(), last: seq, docs: docs };
     },
+    /* 휴지통: 지워진 기록 중 내용이 남아 있는 것 (store.json 모양) */
+    trash: function () { var docs = {}; mem.forEach(function (d) { if (d.del && d.old) docs[keyOf(d.c, d.id)] = { del: false, json: d.old, at: d.at || 0, by: d.by }; }); return { version: 1, docs: docs }; },
     count: function () { var n = 0; mem.forEach(function (d) { if (!d.del) n++; }); return n; },
   };
 })();
