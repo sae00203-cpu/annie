@@ -747,11 +747,10 @@ h2{font-size:20px}
 .srmh .prbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 /* 학부모 리포트 (A4) */
 /* 레슨플랜 PDF */
-.lppage{width:1123px;height:794px;background:#fff;color:#111;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:26px 30px;box-sizing:border-box;font-family:"PR Gowun","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;page:lpl}
-.lppage h1,.lppage .lpdlogo,.lppage .lpdtt p,.lppage .lpdd,.lppage .lpdb,.lppage .lpdl,.lppage .lpdnt{font-family:"PR Jua","PR Gowun",sans-serif;font-weight:400}
+.lppage{width:1123px;height:794px;background:#fff;color:#111;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:26px 30px;box-sizing:border-box;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;page:lpl}
 .lpdhd{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.lpdlogo{font-size:21px;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
-.lpdtt{text-align:center;flex:1}.lpdtt h1{font-size:25px;margin:0}.lpdtt p{margin:4px 0 0;font-size:17px}.lpdtt p span{color:#d6281f}
+.lpdlogo{font-size:21px;font-weight:800;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
+.lpdtt{text-align:center;flex:1}.lpdtt h1{font-size:25px;margin:0;font-weight:800}.lpdtt p{margin:4px 0 0;font-size:17px;font-weight:700}.lpdtt p span{color:#d6281f}
 .lpdt{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:15px}
 .lpdt th,.lpdt td{border:1px solid #555;padding:var(--lpdp,6px) 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
 .lpdt .lpdd{font-size:1.28em;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:1em}
@@ -960,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-11</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-12</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4247,7 +4246,7 @@ function lpdOpen(c,ym){
   var title=lpdTitle(c,days),ov=$('prov');if(!ov){ov=document.createElement('div');ov.id='prov';document.body.appendChild(ov)}
   var draw=function(){var pg=lpdPages(c,ym,title);ov.querySelector('.prpages').innerHTML=pg.join('');lpdFit(ov);var m=ov.querySelector('.prbar .muted');if(m)m.textContent=pg.length+'장'};
   ov.innerHTML='<div class="prbar"><b>레슨플랜 PDF</b><span class="muted"></span><input class="tx" id="lpdT" value="'+esc(title)+'" style="flex:1;min-width:240px;max-width:560px" aria-label="제목"><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">제목은 고칠 수 있어요(반마다 기억해요). PDF로 저장 → 인쇄 창에서 대상을 “PDF로 저장”으로 고르면 돼요. 가로 방향으로 저장돼요.</p></div><div class="prpages lpdpages"></div>';
-  ov.hidden=false;document.body.classList.add('prmode','lpdmode');draw();ov.scrollTop=0;try{if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('15px "PR Jua"'),document.fonts.load('15px "PR Gowun"')]).then(function(){setTimeout(function(){lpdFit(ov)},50)},function(){})}catch(_){}
+  ov.hidden=false;document.body.classList.add('prmode','lpdmode');draw();ov.scrollTop=0;
   $('lpdT').addEventListener('change',function(){title=this.value.trim()||lpdTitle(c,days);var all=Object.assign({},S.cfg.lpPdfT||{});all[c.id]=this.value.trim();S.cfg.lpPdfT=all;cfgPut();draw()});
 }
 document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;if(t.closest('#lpPdf')){var c=S.classes.find(function(x){return x.id===S.lpb.cid});if(c)lpdOpen(c,S.lpb.ym);return}if(t.closest('#prClose'))document.body.classList.remove('lpdmode')},true);
