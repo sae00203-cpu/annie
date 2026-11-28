@@ -1501,7 +1501,7 @@ function renderManage(){
   var h=$('v-manage'),c=cls(),ss=S.setSub||'class';
   var GRPS=[['반 관리',[['class','반 관리'],['stu','학생 관리'],['place','반 편성'],['wtype','단어시험 종류']]],
     ['학원 관리',[['lpcfg','레슨플랜 기준'],['online','온라인 학습 관리'],['video','Video Check 관리'],['rubric','평가 루브릭'],['exam','정기평가 설정'],['cal','휴강·보강 관리'],['files','엑셀 올리기']]]];
-  if(lpAdm()){GRPS[0][1].push(['dup','반 합치기'+(dupGroups().length?' ('+dupGroups().length+')':'')]);GRPS[1][1].push(['who','기록한 사람'])}if(window.ANDOVER_CLOUD)GRPS[1][1].push(['cloud','계정 · 데이터']);
+  if(lpAdm()){var dn=dupGroups().length+orphans().length;GRPS[0][1].push(['dup','반 합치기'+(dn?' ('+dn+')':'')]);GRPS[1][1].push(['who','기록한 사람'])}if(window.ANDOVER_CLOUD)GRPS[1][1].push(['cloud','계정 · 데이터']);
   var gi=GRPS.findIndex(function(g){return g[1].some(function(x){return x[0]===ss})});if(gi<0)gi=0;
   var grp='<div class="setgrp" role="tablist">'+GRPS.map(function(g,i){return '<button type="button" role="tab" data-ssub="'+g[1][0][0]+'" aria-selected="'+(i===gi)+'">'+g[0]+'</button>'}).join('')+'</div>';
   var nav='<div class="seg2 setnav">'+GRPS[gi][1].map(function(x){return '<button type="button" data-ssub="'+x[0]+'" aria-pressed="'+(ss===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
@@ -1523,8 +1523,6 @@ function renderManage(){
   top+='<h2 class="sechd">반 관리</h2><div class="row2"><button type="button" class="ghost" id="addClass">+ 새 반 만들기</button></div>';
   if(!c){h.innerHTML=top+'<p class="hint">반을 먼저 만들어 주세요.</p>';return}
   var list=roster(c);
-  if(lpAdm()&&orphans().length)top+='<div class="vbox dupwarn">지워진 반의 기록이 남아 있어요. <button type="button" class="primary sm" data-ssub="dup">반 다시 만들기</button></div>';
-  if(lpAdm()&&dupGroups().length)top+='<div class="vbox dupwarn">같은 이름 반이 <b>'+dupGroups().length+'쌍</b> 있어요. <button type="button" class="primary sm" data-ssub="dup">반 합치기</button></div>';
   var CP=classCfgHTML(c),sec=function(t,x){return '<section class="cmsec">'+(t?'<h3>'+t+'</h3>':'')+x+'</section>'};
   h.innerHTML=top
    +sec('기본 정보',''
