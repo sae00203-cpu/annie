@@ -741,8 +741,8 @@ h2{font-size:20px}
 .lpdlogo{font-weight:800;font-size:17px;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
 .lpdtt{text-align:center;flex:1}.lpdtt h1{font-size:19px;margin:0;font-weight:800}.lpdtt p{margin:4px 0 0;font-weight:700;font-size:14px}.lpdtt p span{color:#d6281f}
 .lpdt{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:12.5px}
-.lpdt th,.lpdt td{border:1px solid #555;padding:6px 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
-.lpdt .lpdd{font-size:16px;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:12.5px}
+.lpdt th,.lpdt td{border:1px solid #555;padding:var(--lpdp,6px) 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
+.lpdt .lpdd{font-size:1.28em;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:1em}
 .lpdt .lpdb{font-weight:800}.lpdn td{text-align:left;font-size:12.5px}.lpdn{background:#fff8e1}.lpdnt{color:#e08a00}
 @page lpl{size:A4 landscape;margin:0}
 @media print{body.lpdmode .lppage{box-shadow:none;margin:0;width:297mm;height:209mm;break-after:page;page-break-after:always}body.lpdmode .lppage:last-child{break-after:auto;page-break-after:auto}body.lpdmode .prpages{display:block;padding:0}}
@@ -3955,7 +3955,7 @@ function lpPickOpts(b){
 }
 function lpStartHTML(b,i){
   var k=b.kind,ct=lpCatOf(b.book);if(!b.book)return '';
-  if(k==='syl'){var sy=S.syl.get(b.syl);if(!sy)return '<span class="muted">Syllabus가 없어요</span>';return '<label>시작'+lpNumSel('data-lpr="'+i+'|sn"',b.sn||1,sy.rows.length,function(x){var r=sy.rows[x-1];return x+'회'+(r&&r.u?' · '+r.u:'')})+'</label>'}
+  if(k==='syl'){var sy=S.syl.get(b.syl);if(!sy)return '<span class="muted">Syllabus가 없어요</span>';return '<label>시작'+lpNumSel('data-lpr="'+i+'|sn"',b.sn||1,sy.rows.length,function(x){return sylUD(sy,x)})+'</label>'}
   if(k==='ud')return '<label>시작 '+esc(b.ul||(ct&&ct.type)||'Unit')+lpNumSel('data-lpr="'+i+'|su"',b.su||1,Math.max(+(ct&&ct.units)||30,+b.su||1))+'</label><label>Day'+lpNumSel('data-lpr="'+i+'|sd"',b.sd||1,lpPer(b))+'</label><span class="muted lpper">Unit당 '+lpPer(b)+' Day</span>';
   if(k==='day'||k==='n')return '<label>시작 '+(k==='day'?'Day':esc(b.label||'Lesson'))+lpNumSel('data-lpr="'+i+'|sn"',b.sn||1,Math.max(lpMaxOf(b.book,72),+b.sn||1))+'</label>';
   return '<span class="muted">회차만 적어요 (내용은 표에서)</span>';
@@ -3966,6 +3966,8 @@ function lpVocaOpts(R){
   if(cur&&!hit)o+='<option value="'+esc(cur.split(' - ')[0])+'" selected>'+esc(cur.split(' - ')[0])+'</option>';
   return o;
 }
+function sylDay(sy,n){var r=sy.rows,u=r[n-1]&&r[n-1].u,d=1;for(var k=n-2;k>=0&&r[k].u===u;k--)d++;return d}
+function sylUD(sy,n){var r=sy.rows[n-1];if(!r)return '';var u=String(r.u||'').trim();return /^(unit|story|module|lesson|chapter)\b/i.test(u)?u+' Day '+sylDay(sy,n):(u||'Day '+n)}
 function lpSylHTML(b,i){
   var L=sylList();if(!L.length)return '<span class="muted">설정 → 레슨플랜 기준에서 Syllabus를 먼저 올려 주세요</span>';
   var s=S.syl.get(b.syl);
@@ -4138,10 +4140,13 @@ function lpdPages(c,ym,title){
   }
   return pages;
 }
+/* 한 장에 다 들어가게: 넘치면 글자를 조금씩 줄여요 (잘리지 않게) */
+function lpdFit(ov){ov.querySelectorAll('.lppage').forEach(function(pg){var t=pg.querySelector('.lpdt');if(!t)return;var fs=12.5,pd=6;t.style.fontSize='';t.style.removeProperty('--lpdp');
+  while(pg.scrollHeight>pg.clientHeight+1&&fs>6.5){fs-=.5;if(pd>2)pd-=.5;t.style.fontSize=fs+'px';t.style.setProperty('--lpdp',pd+'px')}})}
 function lpdOpen(c,ym){
   var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length){toast('이 달 레슨플랜이 없어요');return}
   var title=lpdTitle(c,days),ov=$('prov');if(!ov){ov=document.createElement('div');ov.id='prov';document.body.appendChild(ov)}
-  var draw=function(){var pg=lpdPages(c,ym,title);ov.querySelector('.prpages').innerHTML=pg.join('');var m=ov.querySelector('.prbar .muted');if(m)m.textContent=pg.length+'장'};
+  var draw=function(){var pg=lpdPages(c,ym,title);ov.querySelector('.prpages').innerHTML=pg.join('');lpdFit(ov);var m=ov.querySelector('.prbar .muted');if(m)m.textContent=pg.length+'장'};
   ov.innerHTML='<div class="prbar"><b>레슨플랜 PDF</b><span class="muted"></span><input class="tx" id="lpdT" value="'+esc(title)+'" style="flex:1;min-width:240px;max-width:560px" aria-label="제목"><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">제목은 고칠 수 있어요(반마다 기억해요). PDF로 저장 → 인쇄 창에서 대상을 “PDF로 저장”으로 고르면 돼요. 가로 방향으로 저장돼요.</p></div><div class="prpages lpdpages"></div>';
   ov.hidden=false;document.body.classList.add('prmode','lpdmode');draw();ov.scrollTop=0;
   $('lpdT').addEventListener('change',function(){title=this.value.trim()||lpdTitle(c,days);var all=Object.assign({},S.cfg.lpPdfT||{});all[c.id]=this.value.trim();S.cfg.lpPdfT=all;cfgPut();draw()});
@@ -4184,11 +4189,11 @@ function lpFill(c,ym,over){
   days.forEach(function(d){
     var id=c.id+'_'+d,old=S.plans.get(id);if(old&&old.src==='xlsx'&&!over){skip++;return}
     var blocks=R.books.filter(function(b,j){return b.book&&bd[j].indexOf(d)>=0}).map(function(b,i){var s=st[R.books.indexOf(b)],les='',ct0=lpCatOf(b.book),sub=function(t){t=(ct0&&ct0.hw)||t;return String(t||'').replace(/\{u\}/g,s.u).replace(/\{d\}/g,s.d).replace(/\{n\}/g,s.n)};
-      if(b.kind==='syl'){var sy=S.syl.get(b.syl),row=sy&&sy.rows[s.n-1],bk={book:b.book,lesson:'',hw:''};if(row){bk.lesson=(row.u?row.u+' · ':'')+s.n+'회'+(row.cw?'\n'+row.cw:'');bk.hw=row.hw;bk.sn=s.n}s.n++;return bk}
+      if(b.kind==='syl'){var sy=S.syl.get(b.syl),row=sy&&sy.rows[s.n-1],bk={book:b.book,lesson:'',hw:''};if(row){bk.lesson=sylUD(sy,s.n);var tp=(lpCatOf(b.book)||{}).hw;bk.hw=tp?String(tp).replace(/\{u\}/g,(String(row.u).match(/\d+/)||[''])[0]).replace(/\{d\}/g,sylDay(sy,s.n)).replace(/\{n\}/g,s.n)+(/video/i.test(row.hw)?'\n'+row.u+' Video Homework':''):row.hw;bk.sn=s.n}s.n++;return bk}
       if(b.kind==='ud'){les=(b.ul||'Unit')+' '+s.u+' Day '+s.d;var hw=sub(b.hw);s.d++;if(s.d>lpPer(b)){s.d=1;s.u++}return {book:b.book,lesson:les,hw:hw}}
       if(b.kind==='n'){les=(b.label||'Lesson')+' '+s.n;var hw2=sub(b.hw);s.k++;if(s.k>=(+b.every||1)){s.k=0;s.n++}return {book:b.book,lesson:les,hw:hw2}}
       if(b.kind==='day'){les='Day '+s.n;var hw3=sub(b.hw);s.n++;return {book:b.book,lesson:les,hw:hw3}}
-      var fl=s.n+'회';s.n++;return {book:b.book,lesson:fl,hw:sub(b.hw)}});
+      var fl='';s.n++;return {book:b.book,lesson:fl,hw:sub(b.hw)}});
     var doc={classId:c.id,date:d,blocks:blocks,voca:R.voca.t?R.voca.t.replace(/\{n\}/g,vn):'',spc:R.spc.on?'Day '+sn+(sn%ev===0?' Video 찍기':''):'',online:R.online||'',notice:R.notice||'',src:'builder'};
     if(old&&old.detail)doc.detail=old.detail;if(R.voca.t)vn++;if(R.spc.on)sn++;
     S.plans.set(id,doc);write('plans/'+id,doc,'p'+id);made++;
