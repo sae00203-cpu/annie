@@ -4446,7 +4446,8 @@ function lpCfgHTML(){
   // 교재 목록
   o+='<div class="vbox"><div class="fl" style="margin-top:0">교재 목록 · Unit별 횟수 <span class="muted">'+cat.length+'권</span></div>'
     +'<p class="hint" style="margin-top:0">Unit당 Day와 숙제를 여기서 정하면 레슨플랜을 만들 때 그대로 써요. 숙제의 {u} {d} {n} 은 그날 Unit · Day · 번호로 바뀌어요. 고치면 바로 저장돼요.</p>'
-    +'<div class="row2" style="margin-top:0"><input class="tx" id="catQ" placeholder="교재 찾기" style="max-width:260px"><button type="button" class="ghost sm" id="catAdd">+ 교재 추가</button></div>'
+    +'<div class="row2" style="margin-top:0"><input class="tx" id="catQ" placeholder="교재 찾기" style="max-width:260px"><button type="button" class="ghost sm" id="catAdd">+ 교재 추가</button><label class="ghost sm filebtn">엑셀로 올리기<input type="file" id="catF" accept=".xlsx,.xls,.csv" hidden></label></div>'
+    +'<p class="hint" style="margin-top:0">엑셀 첫 줄에 <b>교재(book_name) · 분류(category) · 단위(unit_type) · Unit 수(total_units) · Unit당 Day(days_per_unit) · 숙제</b> 중 있는 열만 있으면 돼요. 올리면 바로 적용돼요: 같은 교재는 새 값으로 바꾸고, 없던 교재는 더해요.</p>'
     +'<div class="tw"><table class="rt lpcat"><thead><tr><th>교재</th><th>분류</th><th>단위</th><th>Unit 수</th><th>Unit당 Day</th><th>숙제 <small>({u} {d} {n})</small></th><th>전체 시수</th><th></th></tr></thead><tbody>'
     +cat.map(function(b,i){return '<tr data-catrow="'+esc((b.name+' '+(b.cat||'')).toLowerCase())+'"><td><input class="tx" data-cat="'+i+'|name" value="'+esc(b.name)+'"></td><td><input class="tx n2" data-cat="'+i+'|cat" value="'+esc(b.cat||'')+'"></td>'
       +'<td><select class="tx" data-cat="'+i+'|type">'+LP_UT.map(function(t){return '<option'+(String(b.type||'Unit').trim()===t?' selected':'')+'>'+t+'</option>'}).join('')+'</select></td>'
@@ -4455,6 +4456,25 @@ function lpCfgHTML(){
     +'</tbody></table></div></div>';
   return o;
 }
+function catParse(wb){
+  var out=[];
+  wb.SheetNames.forEach(function(sn){
+    var A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true}),hi=-1,ix={};
+    for(var r=0;r<Math.min(A.length,10);r++){var H=A[r].map(function(v){return String(v).replace(/\s+/g,' ').trim().toLowerCase()});
+      var f=function(re){for(var k=0;k<H.length;k++)if(re.test(H[k]))return k;return -1};
+      var iN=f(/^(book_?name|name|교재|교재명|교재 이름|book)$/),iD=f(/days?_?per_?unit|unit\s*당|unit당/);
+      if(iN>=0&&iD>=0){hi=r;ix={n:iN,d:iD,c:f(/^(category|분류|영역|section)$/),t:f(/^(unit_?type|단위|type)$/),u:f(/total_?units|unit\s*수|units?$/),h:f(/^(hw|homework|숙제)/)};break}}
+    if(hi<0)return;
+    A.slice(hi+1).forEach(function(R){var n=String(R[ix.n]||'').replace(/\s+/g,' ').trim();if(!n)return;
+      var o={name:n,dpu:+R[ix.d]||0};if(ix.c>=0&&String(R[ix.c]).trim())o.cat=String(R[ix.c]).trim();if(ix.t>=0&&String(R[ix.t]).trim())o.type=String(R[ix.t]).trim();if(ix.u>=0&&+R[ix.u])o.units=+R[ix.u];if(ix.h>=0&&String(R[ix.h]).trim())o.hw=String(R[ix.h]).trim();out.push(o)});
+  });
+  return out;
+}
+function catMerge(rows){var L=ypCat().map(function(x){return Object.assign({},x)}),up=0,add=0;
+  rows.forEach(function(o){var b=L.find(function(x){return ypNorm(x.name)===ypNorm(o.name)});if(b){Object.keys(o).forEach(function(k){if(k!=='name'&&(o[k]||o[k]===0)&&!(k==='dpu'&&!o[k]))b[k]=o[k]});up++}else{L.push(Object.assign({cat:'',type:'Unit',units:0,dpu:0},o));add++}});
+  catPut(L);return {up:up,add:add}}
+document.addEventListener('change',function(e){var t=e.target;if(t.id!=='catF'||!t.files||!t.files[0])return;if(typeof XLSX==='undefined'){toast('엑셀 도구를 불러오지 못했어요');return}
+  t.files[0].arrayBuffer().then(function(ab){var rows=catParse(XLSX.read(ab,{type:'array'}));if(!rows.length)throw new Error('교재 · Unit당 Day 열을 찾지 못했어요');var r=catMerge(rows);toast('교재 목록에 적용했어요: '+r.up+'권 바꿈 · '+r.add+'권 더함');renderManage()}).catch(function(er){toast('읽지 못했어요: '+er.message)})});
 function catPut(L){var d={books:L,at:new Date().toISOString()};S.yplan.set('_cat',d);write('yplan/_cat',d,'z_cat')}
 function lpRe(){if($('v-lp')&&!$('v-lp').hidden)renderLp();else renderManage()}
 document.addEventListener('input',function(e){var t=e.target;if(t.id!=='catQ')return;var q=t.value.trim().toLowerCase();document.querySelectorAll('[data-catrow]').forEach(function(r){r.hidden=!!q&&r.dataset.catrow.indexOf(q)<0})});
@@ -4668,7 +4688,7 @@ document.addEventListener('click',function(e){
   if(t.closest('#ypNo')){S.yp0=null;lpRe();return}
   if(t.closest('#ypGo')&&S.yp0){var P=S.yp0,n=0,now=new Date().toISOString();
     P.sheets.forEach(function(s){if(!s.cid)return;var d={classId:s.cid,sheet:s.sheet,title:s.title,year:P.year,books:s.books,tot:s.tot,at:now};S.yplan.set(s.cid,d);write('yplan/'+s.cid,d,'z'+s.cid);n++});
-    if(P.cat.length){var cd={books:P.cat,at:now};S.yplan.set('_cat',cd);write('yplan/_cat',cd,'z_cat')}
+    if(P.cat.length)catMerge(P.cat);
     if(P.vids.length){var V=(S.cfg.vhw||[]).filter(function(r){return !P.vids.some(function(x){return ypNorm(x.book)===ypNorm(r.book)})});S.cfg.vhw=V.concat(P.vids);cfgPut()}
     S.yp0=null;toast(n+'개 반 연간 계획을 저장했어요');lpRe();return}
   if(t.closest('#lpYp')){var c3=S.classes.find(function(x){return x.id===S.lpb.cid}),YP=c3&&S.yplan.get(c3.id);if(!YP)return;var ym=S.lpb.ym;
