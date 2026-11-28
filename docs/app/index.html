@@ -274,6 +274,7 @@ h1,h2{margin:0;text-wrap:balance}
 .cmpart{display:grid;gap:4px}
 .cmlab{font-size:12.5px;font-weight:700;letter-spacing:.02em;padding-left:8px;border-left:3px solid var(--accent)}
 .cmlab.en{border-left-color:var(--ok)}
+.mebadge{font-size:12.5px;color:var(--muted);margin:2px 0 10px}.mebadge b{color:var(--ink,inherit)}@media (max-width:999px){.mebadge{margin:0 16px 8px}}
 .setnav{margin:0 0 12px}
 .setgrp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.setgrp button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 10px;font-size:17px;font-weight:700;color:var(--muted);cursor:pointer}.setgrp button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .sechd{margin:22px 0 4px;padding-top:12px;border-top:2px solid var(--line)}
@@ -1226,6 +1227,7 @@ document.addEventListener('wheel',function(e){
 var lastCtx='';
 var PG={lp:['레슨플랜','원장님이 한 달 진도를 짜고, 담당 선생님이 날마다 상세 계획을 더해요'],today:['오늘 수업','반을 고르고 출결 · 교재 · 숙제 · 단어시험을 넣어요'],coach:['코칭','못 한 숙제만 누르고 메시지를 보내요'],res:['코칭결과','학생별 코칭 완료 기록을 모아 봐요'],ov:['온라인 · 영상','온라인 숙제와 영상 숙제 올림을 확인해요'],mr:['월간 리포트','한 달 기록을 보고 평가 · 점수를 넣어요'],sr:['학생 기록','학생 한 명의 누적 기록을 봐요'],dash:['대시보드','오늘 마감 · 이번 달 진행 · 주의 학생을 한눈에 봐요'],manage:['설정','반 · 학생 · 수업계획 · 평가 기준을 관리해요']};
 function pgHead(vk){var d=PG[vk]||['',''],t=$('pgT'),q=$('pgD');if(!t)return;t.textContent=d[0];q.textContent=d[1];$('pghead').hidden=!d[0]}
+function meBadge(){var C=window.ANDOVER_CLOUD,el=$('meBadge');if(!C||!C.me){if(el)el.hidden=true;return}var m=C.me()||{};if(!el){var t=document.querySelector('.side .top');if(!t)return;el=document.createElement('div');el.id='meBadge';el.className='mebadge';t.insertAdjacentElement('afterend',el)}el.hidden=!m.name;el.innerHTML='로그인: <b>'+esc(m.name||'')+'</b> '+(m.role==='admin'?'<span class="tag">원장</span>':'<span class="muted">선생님</span>')}
 function renderAll(){
   scCache={};
   try{coachMigrate()}catch(e){}
@@ -1235,7 +1237,7 @@ function renderAll(){
   document.querySelectorAll('.tabs button').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===S.tab))});
   var vk=viewKey();
   ['today','lp','coach','res','manage','ov','mr','sr','dash'].forEach(function(k){$('v-'+k).hidden=!(ok&&vk===k)});
-  pgHead(vk);
+  pgHead(vk);meBadge();
   $('clsrow').hidden=!ok||!has||vk==='res'||vk==='dash'||(vk==='ov'&&S.sub.ov==='video')||(vk==='mr'&&(S.sub.mr==='student'||S.sub.mr==='xl'));
   renderSub();
   status();
