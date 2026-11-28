@@ -179,6 +179,9 @@
     /* 학원 컴퓨터 data/store.json 또는 백업 파일 → Firestore (있는 기록은 덮어써요) */
     importStore: function (store, onProg) {
       var keys = Object.keys((store && store.docs) || {}).filter(function (k) { return k.indexOf('|') > 0 && k.indexOf('zztest|') !== 0; }), done = 0, chunks = [];
+      /* 설정(settings|main)은 합쳐요: 클라우드에서 새로 만든 설정(레슨플랜 규칙 등)은 지우지 않아요 */
+      var fs = store.docs['settings|main'], cur = mem.get('settings|main');
+      if (fs && !fs.del && cur && cur.json) { try { var A = JSON.parse(fs.json || '{}'), B = JSON.parse(cur.json); Object.keys(B).forEach(function (k) { if (!(k in A) || /^(lpRules|lpPdfT)$/.test(k) || (k === 'vhw' && (B.vhw || []).length > (A.vhw || []).length)) A[k] = B[k]; }); store.docs['settings|main'] = Object.assign({}, fs, { json: JSON.stringify(A) }); } catch (e) {} }
       for (var i = 0; i < keys.length; i += 400) chunks.push(keys.slice(i, i + 400));
       return chunks.reduce(function (p, ks) {
         return p.then(function () {

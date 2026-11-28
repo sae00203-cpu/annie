@@ -1698,7 +1698,7 @@ function planHTML(c){
   if(!pl)return '<div class="plan none">이 날 수업계획이 아직 없어요. 레슨플랜 탭에서 만들면 여기에 보여요.</div>';
   var h='<div class="plan"><div class="ph"><b>오늘의 수업계획</b>'+(pl.sample?'<span class="tag">예시 데이터</span>':'')+'</div>';
   (pl.blocks||[]).forEach(function(b,bi){
-    h+='<div class="pb"><div class="bkw"><div class="bk">'+esc(b.book)+(vhwHit(b)?' <span class="tag">Video HW</span>':'')+'</div>'+tchSel(c,bi)+'</div><div class="pc"><div class="pl"><small>수업</small>'+nl(b.lesson)+'</div>'
+    h+='<div class="pb"><div class="bkw"><div class="bk">'+esc(b.book)+(vhwHit(b)?' <span class="tag">Video HW</span>':'')+'</div>'+tchSel(c,bi)+'</div><div class="pc"><div class="pl"><small>수업</small>'+nl(lpLes(b))+'</div>'
       +(b.hw?'<div class="pl hw"><small>숙제</small>'+nl(b.hw)+'</div>':'')+'</div></div>';
   });
   if(pl.voca)h+='<div class="px"><small>단어시험 준비</small><span>'+nl(pl.voca)+'</span></div>';
@@ -4345,6 +4345,8 @@ function lpVocaOpts(R){
   if(cur&&!hit)o+='<option value="'+esc(cur.split(' - ')[0])+'" selected>'+esc(cur.split(' - ')[0])+'</option>';
   return o;
 }
+/* 보여 줄 진도: 예전에 만든 'Unit 1 · 3회 + Class Work' 도 Unit · Day 로 */
+function lpLes(b){var s=String(b&&b.lesson||''),m=s.match(/^([^\n]*?)\s*·\s*(\d+)회/);if(!m)return /^\d+회$/.test(s)?'':s;var sl=sylList().find(function(x){return ypSame(x.name,b.book)}),sy=sl&&S.syl.get(sl.id);return sy?sylUD(sy,+(b.sn||m[2])):m[1]}
 function sylDay(sy,n){var r=sy.rows,u=r[n-1]&&r[n-1].u,d=1;for(var k=n-2;k>=0&&r[k].u===u;k--)d++;return d}
 function sylUD(sy,n){var r=sy.rows[n-1];if(!r)return '';var u=String(r.u||'').trim();return /^(unit|story|module|lesson|chapter)\b/i.test(u)?u+' Day '+sylDay(sy,n):(u||'Day '+n)}
 function lpSylHTML(b,i){
@@ -4508,7 +4510,7 @@ function lpdPages(c,ym,title){
     for(var k=0;k<nb;k++){
       var B=P.map(function(pl){return pl?(pl.blocks||[]).filter(function(b){return b.book})[k]:null});
       o+='<tr><th class="lpdl">Books</th>'+B.map(function(b){return '<td class="lpdb"'+(b?' style="background:'+col[b.book]+'"':'')+'>'+(b?esc(b.book):'')+'</td>'}).join('')+'</tr>'
-        +'<tr><th class="lpdl">Lesson<br>Plan</th>'+B.map(function(b){return '<td>'+(b?lpdTxt(b.lesson):'')+'</td>'}).join('')+'</tr>'
+        +'<tr><th class="lpdl">Lesson<br>Plan</th>'+B.map(function(b){return '<td>'+(b?lpdTxt(lpLes(b)):'')+'</td>'}).join('')+'</tr>'
         +'<tr><th class="lpdl">HW</th>'+B.map(function(b){return '<td>'+(b?lpdTxt(b.hw):'')+'</td>'}).join('')+'</tr>';
     }
     if(P.some(function(pl){return pl&&pl.voca}))o+='<tr><th class="lpdl">Voca Test<br>준비</th>'+P.map(function(pl){return '<td>'+(pl?lpdTxt(pl.voca):'')+'</td>'}).join('')+'</tr>';
@@ -4592,7 +4594,7 @@ function lpViewHTML(){
   return o+'<div class="lpv">'+days.map(function(d){var pl=S.plans.get(c.id+'_'+d),cls0='lpvc'+(d===t?' now':'')+(d<t?' past':'');
     var hd='<div class="lpvh"><b>'+md(d)+'</b> <span class="muted">'+DOW[dDow(d)]+'</span>'+(mkFor(c.id,d)?' <em class="ctag mk">보강</em>':'')+(d===t?' <em class="ctag">오늘</em>':'')+'</div>';
     if(!pl)return '<div class="'+cls0+'">'+hd+'<p class="hint">계획이 없어요</p></div>';
-    var bl=(pl.blocks||[]).filter(function(b){return b.lesson||b.hw}).map(function(b){return '<div class="lpvb"><div class="lpvk">'+esc(b.book)+'</div><div class="lpvl">'+nl(b.lesson||'')+'</div>'+(b.hw?'<div class="lpvw"><small>숙제</small>'+nl(b.hw)+'</div>':'')+'</div>'}).join('');
+    var bl=(pl.blocks||[]).filter(function(b){return b.lesson||b.hw}).map(function(b){return '<div class="lpvb"><div class="lpvk">'+esc(b.book)+'</div><div class="lpvl">'+nl(lpLes(b))+'</div>'+(b.hw?'<div class="lpvw"><small>숙제</small>'+nl(b.hw)+'</div>':'')+'</div>'}).join('');
     var ex=[['단어',pl.voca],['SPC',pl.spc],['온라인',pl.online]].filter(function(x){return x[1]}).map(function(x){return '<span><small>'+x[0]+'</small> '+esc(x[1])+'</span>'}).join('');
     return '<div class="'+cls0+'">'+hd+'<div class="lpvg">'+bl+'</div>'+(ex?'<div class="lpvx">'+ex+'</div>':'')
       +'<label class="lpvd"><small>상세 계획 (담당 선생님)</small><textarea class="tx" rows="'+Math.max(2,Math.min(8,String(pl.detail||'').split('\n').length))+'" data-lpe="'+d+'|detail" placeholder="수업 흐름 · 활동 · 준비물">'+esc(pl.detail||'')+'</textarea></label></div>'}).join('')+'</div>';
