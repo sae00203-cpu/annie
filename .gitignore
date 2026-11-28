@@ -4,3 +4,7 @@ node_modules/
 .DS_Store
 # 학생 데이터 · 백업 · 비밀번호는 절대 깃허브에 올리지 않아요
 data/
+
+# Firebase 호스팅용 빌드 결과 (GitHub Actions 가 매번 새로 만들어요)
+hosting/
+.firebase/

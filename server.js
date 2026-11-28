@@ -51,7 +51,14 @@ function writeJsonAtomic(file, obj) {
     fs.writeSync(fd, JSON.stringify(obj));
     fs.fsyncSync(fd);
   } finally { fs.closeSync(fd); }
-  fs.renameSync(tmp, file);
+  // 바탕화면이 OneDrive 와 동기화되면 파일이 잠깐 잠길 수 있어서, 몇 번 다시 시도해요
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tmp, file); return; } catch (e) {
+      if (!['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) throw e;
+      if (i >= 8) { fs.copyFileSync(tmp, file); try { fs.unlinkSync(tmp); } catch (_) { /* 남아도 괜찮아요 */ } return; }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60 * (i + 1));
+    }
+  }
 }
 
 const config = loadConfig();
@@ -212,7 +219,7 @@ function setSessionCookie(res) {
 }
 
 /* ---------------- HTTP ---------------- */
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.jpg': 'image/jpeg', '.ttf': 'font/ttf' };
 
 function send(res, status, body, type, extra) {
   res.writeHead(status, Object.assign({ 'Content-Type': type || 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }, extra || {}));
@@ -220,7 +227,7 @@ function send(res, status, body, type, extra) {
 }
 function sendJson(res, status, obj) { send(res, status, JSON.stringify(obj), MIME['.json']); }
 
-function readBody(req) {
+function readRaw(req) {
   return new Promise((resolve, reject) => {
     const chunks = []; let size = 0;
     req.on('data', c => {
@@ -228,9 +235,73 @@ function readBody(req) {
       if (size > MAX_BODY) { reject(new Error('요청이 너무 커요')); req.destroy(); return; }
       chunks.push(c);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
+}
+async function readBody(req) { return (await readRaw(req)).toString('utf8'); }
+
+/* ---------------- 프로그램 업데이트 (ZIP) ----------------
+ * 관리 화면에서 업데이트 ZIP 을 올리면 프로그램 파일만 바꿔요.
+ * data 폴더(학생 기록 · 백업 · 비밀번호)는 절대 건드리지 않아요.
+ */
+const zlib = require('zlib');
+const UPDATABLE = /^(server\.js|package\.json|README\.md|\.gitignore|start-windows\.bat|start-mac\.command|public\/[A-Za-z0-9_.\-\/]+)$/;
+
+function unzipEntries(buf) {
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP 파일이 아니에요');
+  const count = buf.readUInt16LE(eocd + 10);
+  let off = buf.readUInt32LE(eocd + 16);
+  const out = [];
+  for (let n = 0; n < count; n++) {
+    if (buf.readUInt32LE(off) !== 0x02014b50) throw new Error('ZIP 파일이 손상됐어요');
+    const method = buf.readUInt16LE(off + 10), csize = buf.readUInt32LE(off + 20);
+    const nlen = buf.readUInt16LE(off + 28), elen = buf.readUInt16LE(off + 30), clen = buf.readUInt16LE(off + 32);
+    const local = buf.readUInt32LE(off + 42);
+    const name = buf.slice(off + 46, off + 46 + nlen).toString('utf8').replace(/\\/g, '/');
+    off += 46 + nlen + elen + clen;
+    if (name.endsWith('/')) continue;
+    if (buf.readUInt32LE(local) !== 0x04034b50) throw new Error('ZIP 파일이 손상됐어요');
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const raw = buf.slice(start, start + csize);
+    let data;
+    if (method === 0) data = raw;
+    else if (method === 8) data = zlib.inflateRawSync(raw);
+    else throw new Error('지원하지 않는 압축 방식이에요 (' + name + ')');
+    out.push({ name, data });
+  }
+  return out;
+}
+
+function applyUpdate(buf) {
+  let files = unzipEntries(buf);
+  // 'andover-record/server.js' 처럼 맨 위 폴더 하나로 묶여 있으면 그 폴더를 벗겨요
+  const tops = new Set(files.map(f => f.name.split('/')[0]));
+  if (tops.size === 1 && files.every(f => f.name.includes('/'))) {
+    const top = [...tops][0] + '/';
+    files = files.map(f => ({ name: f.name.slice(top.length), data: f.data }));
+  }
+  const ok = files.filter(f => UPDATABLE.test(f.name) && !f.name.split('/').includes('..'));
+  if (!ok.some(f => f.name === 'server.js') || !ok.some(f => f.name === 'public/andover-app.html')) {
+    throw new Error('앤도버 생활기록 업데이트 파일이 아니에요 (server.js, public/andover-app.html 이 필요해요)');
+  }
+  // 바꾸기 전 프로그램을 백업해 두어요 (되돌릴 수 있게)
+  const bdir = path.join(BACKUP_DIR, 'program-' + stampStr(new Date()));
+  for (const f of ok) {
+    const cur = path.join(ROOT, f.name);
+    if (fs.existsSync(cur)) { fs.mkdirSync(path.dirname(path.join(bdir, f.name)), { recursive: true }); fs.copyFileSync(cur, path.join(bdir, f.name)); }
+  }
+  for (const f of ok) {
+    const dest = path.join(ROOT, f.name);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest + '.tmp', f.data);
+    fs.renameSync(dest + '.tmp', dest);
+  }
+  return { updated: ok.length, skipped: files.length - ok.length, backup: path.basename(bdir) };
 }
 
 function whoIs(req) {
@@ -324,6 +395,15 @@ async function handle(req, res) {
     if (!fs.existsSync(file)) return send(res, 404, 'Not found');
     return send(res, 200, fs.readFileSync(file), MIME['.json'], { 'Content-Disposition': 'attachment; filename="' + name + '"' });
   }
+  if (req.method === 'POST' && p === '/admin/update') {
+    try {
+      const r = applyUpdate(await readRaw(req));
+      console.log('[업데이트] 프로그램 파일 ' + r.updated + '개를 바꿨어요. 이 창을 닫고 다시 실행해 주세요.');
+      return sendJson(res, 200, r);
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message || String(e) });
+    }
+  }
   if (req.method === 'POST' && p.startsWith('/admin/')) {
     try {
       const body = JSON.parse((await readBody(req)) || '{}');
@@ -346,6 +426,70 @@ async function handle(req, res) {
         const before = backupNow('before-import-' + stampStr(new Date()) + '.json');
         replaceAll(docs, by);
         return sendJson(res, 200, { counts: countDocs(store.docs), backup: before });
+      }
+
+      if (p === '/admin/merge-history') {
+        // 지난 단어시험 · Voca King 성적을 더해요. 지우거나 덮어쓰지 않아요 (이미 있는 학생 점수는 그대로).
+        const rows = Array.isArray(body.rows) ? body.rows : [];
+        if (!rows.length) throw new Error('추가할 기록이 없어요');
+        const norm = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+        const studs = [];
+        for (const k of Object.keys(store.docs)) {
+          if (!k.startsWith('students|') || store.docs[k].del) continue;
+          try { studs.push(JSON.parse(store.docs[k].json)); } catch (_) { /* 깨진 기록은 건너뜀 */ }
+        }
+        const byName = {};
+        studs.forEach(s => (byName[norm(s.name)] = byName[norm(s.name)] || []).push(s));
+        const pick = r => {
+          let c = byName[norm(r.name)] || [];
+          if (c.length > 1) { const e = c.filter(s => norm(s.ename) === norm(r.ename)); if (e.length) c = e; }
+          if (c.length > 1) { const a = c.filter(s => s.status !== 'left'); if (a.length) c = a; }
+          return c.length === 1 ? c[0] : (c.length > 1 ? 'many' : null);
+        };
+        // 그 날짜에 있던 반 (반 이동 이력이 있으면 따라감)
+        const classAt = (s, d) => {
+          const mv = (s.hist || []).filter(h => h.t === 'class' && h.to && h.d).sort((a, b) => (a.d < b.d ? -1 : 1));
+          const next = mv.find(h => h.d > d);
+          return (next && next.from) || s.classId;
+        };
+        const groups = new Map(), unmatched = {}, many = {};
+        let bad = 0;
+        for (const r of rows) {
+          if (!r || !/^(word|king)$/.test(r.kind) || !/^\d{4}-\d\d-\d\d$/.test(r.date) || typeof r.v !== 'number') { bad++; continue; }
+          const s = pick(r), label = String(r.name || '') + (r.ename ? ' (' + r.ename + ')' : '');
+          if (s === 'many') { many[label] = (many[label] || 0) + 1; continue; }
+          const cid = s && classAt(s, r.date);
+          if (!s || !cid) { unmatched[label] = (unmatched[label] || 0) + 1; continue; }
+          const id = cid + '_' + r.date + '_' + r.kind;
+          let g = groups.get(id);
+          if (!g) groups.set(id, g = { classId: cid, date: r.date, kind: r.kind, max: {}, range: new Set(), scores: {} });
+          g.scores[s.id] = r.v;
+          if (r.max) g.max[r.max] = (g.max[r.max] || 0) + 1;
+          if (r.range) g.range.add(String(r.range).slice(0, 40));
+        }
+        const before = backupNow('before-history-' + stampStr(new Date()) + '.json');
+        let t = nextTime(), made = 0, added = 0, kept = 0;
+        for (const [id, g] of groups) {
+          const key = 'tests|' + id, d0 = store.docs[key];
+          let doc = null;
+          if (d0 && !d0.del) { try { doc = JSON.parse(d0.json); } catch (_) { doc = null; } }
+          const mx = +((Object.entries(g.max).sort((a, b) => b[1] - a[1])[0] || [0])[0]) || 0;
+          if (!doc) { doc = { classId: g.classId, date: g.date, kind: g.kind, list: '', range: [...g.range].join(', ').slice(0, 100), max: mx, scores: {}, src: 'history' }; made++; }
+          doc.scores = doc.scores || {};
+          let ch = false;
+          for (const [sid, v] of Object.entries(g.scores)) {
+            if (doc.scores[sid] !== undefined) { kept++; continue; }
+            doc.scores[sid] = v; added++; ch = true;
+          }
+          if (!ch && d0 && !d0.del) continue;
+          if (!doc.max && mx) doc.max = mx;
+          doc.savedAt = new Date().toISOString();
+          store.docs[key] = { t: t++, by: by, del: false, json: JSON.stringify(doc) };
+        }
+        store.last = Math.max(store.last, t - 1);
+        saveStore();
+        const top = o => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([n, c]) => n + ' ' + c + '건');
+        return sendJson(res, 200, { made, added, kept, bad, unmatched: top(unmatched), many: top(many), backup: before });
       }
 
       if (p === '/admin/restore') {
@@ -375,6 +519,13 @@ async function handle(req, res) {
   }
 
   if (req.method === 'GET' && (p === '/standalone.js' || p.startsWith('/vendor/'))) return serveStatic(res, p.slice(1));
+  // 선생님 사용 가이드 (주소/guide)
+  // 주소 끝에 / 가 없으면 사진(img/...) 경로가 어긋나서 /guide/ 로 보내요
+  if (req.method === 'GET' && p === '/guide') { res.writeHead(301, { Location: '/guide/' }); return res.end(); }
+  if (req.method === 'GET' && p === '/guide/') return serveStatic(res, 'guide/index.html');
+  if (req.method === 'GET' && p.startsWith('/guide/img/')) return serveStatic(res, p.slice(1));
+  if (req.method === 'GET' && p === '/report/letterhead.jpg') return serveStatic(res, p.slice(1));
+  if (req.method === 'GET' && /^\/report\/fonts\/[a-z0-9-]+\.ttf$/.test(p)) return serveStatic(res, p.slice(1));
   if (p === '/favicon.ico') return send(res, 204, '');
   return send(res, 404, 'Not found');
 }

@@ -61,6 +61,17 @@ a{color:var(--acc)}
   </section>
 
   <section>
+    <h2>지난 성적 추가하기</h2>
+    <p class="mute">지난 단어시험 · Voca King 성적 파일(.json)을 고르면 학생 이름으로 짝을 맞춰 <b>더하기만</b> 해요. 지금 기록은 지우거나 덮어쓰지 않고, 넣기 전에 자동으로 백업해요.</p>
+    <div class="row">
+      <input type="file" id="histFile" accept=".json">
+      <button id="histBtn" disabled>추가하기</button>
+    </div>
+    <div id="histPrev" class="chips"></div>
+    <div id="histMsg" class="msg"></div>
+  </section>
+
+  <section>
     <h2>백업</h2>
     <p class="mute">하루 한 번 자동으로 백업하고, 최근 30개를 남겨요. 백업 파일은 USB나 다른 PC에도 따로 보관해 두세요.</p>
     <div class="row" style="margin-bottom:10px">
@@ -80,6 +91,16 @@ a{color:var(--acc)}
       <button id="pwBtn">저장</button>
     </div>
     <div id="pwMsg" class="msg"></div>
+  </section>
+
+  <section>
+    <h2>프로그램 업데이트</h2>
+    <p class="mute">새 버전의 업데이트 ZIP 파일을 고르면 프로그램 파일만 바뀌어요. <b>학생 기록(data 폴더)은 건드리지 않아요.</b> 바꾸기 전 프로그램은 백업 폴더에 따로 보관돼요.</p>
+    <div class="row">
+      <input type="file" id="updFile" accept=".zip">
+      <button id="updBtn" disabled>업데이트</button>
+    </div>
+    <div id="updMsg" class="msg"></div>
   </section>
 </main>
 
@@ -192,6 +213,50 @@ $('pwBtn').onclick = function () {
   post('/admin/password', { password: v }).then(function (r) {
     $('pw').value = ''; msg($('pwMsg'), r.hasPassword ? '저장했어요. 다른 PC·휴대폰에서는 이 비밀번호로 들어와요.' : '비밀번호를 해제했어요.', true); load();
   }, function (e) { msg($('pwMsg'), '저장하지 못했어요: ' + e.message); });
+};
+
+/* ---- 지난 성적 추가하기 ---- */
+var hist = null;
+$('histFile').onchange = function () {
+  hist = null; $('histBtn').disabled = true; $('histPrev').innerHTML = ''; $('histMsg').textContent = '';
+  var f = this.files[0]; if (!f) return;
+  f.text().then(function (t) {
+    var j; try { j = JSON.parse(t); } catch (_) { return msg($('histMsg'), 'JSON 파일이 아니에요.'); }
+    var rows = Array.isArray(j) ? j : j.rows;
+    if (!Array.isArray(rows) || !rows.length) return msg($('histMsg'), '추가할 기록이 없어요.');
+    hist = rows;
+    var n = { word: 0, king: 0 }, d = rows.map(function (r) { n[r.kind] = (n[r.kind] || 0) + 1; return r.date; }).sort();
+    chips($('histPrev'), { '단어시험': n.word || 0, 'Voca King': n.king || 0 });
+    msg($('histMsg'), d[0] + ' ~ ' + d[d.length - 1] + ' 기록이에요. 추가하기를 누르면 학생 이름으로 짝을 맞춰 넣어요.', true);
+    $('histBtn').disabled = false;
+  });
+};
+$('histBtn').onclick = function () {
+  if (!hist) return;
+  if (!confirm('지난 성적 ' + hist.length + '건을 추가할까요?\n지금 기록은 그대로 두고 더하기만 해요.')) return;
+  var b = this; b.disabled = true;
+  post('/admin/merge-history', { rows: hist }).then(function (r) {
+    var t = '✅ 점수 ' + r.added + '건을 넣었어요 (새 시험 기록 ' + r.made + '개).';
+    if (r.kept) t += '\n이미 있던 점수 ' + r.kept + '건은 그대로 두었어요.';
+    if (r.unmatched.length) t += '\n\n명단에 없어서 넣지 못한 학생 ' + r.unmatched.length + '명 (퇴원생이거나 이름이 달라요):\n' + r.unmatched.join(', ');
+    if (r.many.length) t += '\n\n같은 이름이 여러 명이라 넣지 못한 학생:\n' + r.many.join(', ');
+    t += '\n\n열려 있는 앱 화면은 새로고침해 주세요.';
+    msg($('histMsg'), t, true); load();
+  }, function (e) { msg($('histMsg'), '추가하지 못했어요: ' + e.message); b.disabled = false; });
+};
+
+/* ---- 프로그램 업데이트 ---- */
+$('updFile').onchange = function () { $('updBtn').disabled = !this.files[0]; $('updMsg').textContent = ''; };
+$('updBtn').onclick = function () {
+  var f = $('updFile').files[0]; if (!f) return;
+  if (!confirm('"' + f.name + '"(으)로 프로그램을 업데이트할까요?\n학생 기록은 그대로 남아요.')) return;
+  var btn = this; btn.disabled = true; msg($('updMsg'), '업데이트하는 중…', true);
+  f.arrayBuffer().then(function (buf) {
+    return fetch('/admin/update', { method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: buf });
+  }).then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }); })
+    .then(function (j) {
+      msg($('updMsg'), '✅ 프로그램 파일 ' + j.updated + '개를 바꿨어요.\n이제 검은 창을 닫고 start-windows.bat 을 다시 실행한 뒤, 열려 있는 화면을 모두 새로고침해 주세요.', true);
+    }, function (e) { msg($('updMsg'), '업데이트하지 못했어요: ' + e.message); btn.disabled = false; });
 };
 
 load();
