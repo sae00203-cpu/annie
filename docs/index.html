@@ -391,6 +391,7 @@
 .lpcn{font-size:16px;margin-right:4px}.hmbar{flex-wrap:wrap}.hmleg{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}.hmleg .hm{font-size:11.5px}
 .hmgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;overflow:hidden;margin-top:10px;background:var(--surface)}
 .hmwk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:var(--r1);border:1px solid var(--line);border-top:0;background:var(--surface);position:relative}
+#lpdN{display:inline-flex;gap:4px;flex-wrap:wrap}#lpdN .on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .hmwk:last-child{border-radius:0 0 12px 12px}
 .hmwk .hmd{min-height:0;border-bottom:0}.hmwk .hmd:nth-child(7){border-right:0}
 .hmsp{height:calc(var(--ln) * 22px);flex:0 0 auto}
@@ -1364,7 +1365,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-36</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-37</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~8 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4661,9 +4662,13 @@ function lpdNotice(s){return nl(String(s||'')).replace(/\[([^\]]+)\]/g,'<b class
 var LPD_GC={'Reading':'#d9ead3','Phonics':'#d9ead3','Trophy 9':'#cfe2f3','Writing':'#fce5cd','Speaking':'#f4cccc','Grammar':'#b4a7d6','Voca':'#b4a7d6','행사':'#ffe599','기타':'#eeeeee'};
 function lpdGroup(b){if(b.ev||EV_LIST.indexOf(evName(b.book))>=0||/voca\s*king|보카\s*킹|정기\s*평가/i.test(b.book||''))return '행사';var sl=sylList().find(function(x){return ypSame(x.name,b.book)}),ct=lpCatOf(b.book);return lpGrp(b.book,(ct&&ct.cat)||(sl&&sylCat(sl))||'')}
 function lpdColor(b){return LPD_GC[lpdGroup(b)]||LPD_GC['기타']}
+/* 주 3회 이상이면 한 장에 6일, 주 2회면 4일. 반마다 직접 고를 수도 있어요 */
+function lpdThree(c,days){var m=(S.cfg.lpPdfN||{})[c.id];if(m===6)return true;if(m===4)return false;
+  var wk={};days.forEach(function(d){var k=addDays(d,-dDow(d));wk[k]=(wk[k]||0)+1});var full=Object.keys(wk).map(function(k){return wk[k]}),mx=Math.max.apply(null,full.concat([0]));
+  var dw=dowAt(c,days[0]).length;return mx>=3||dw>=3}
 function lpdPages(c,ym,title){
   var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length)return [];
-  var p=ym.split('-'),col={},ci=0,lv=null,notice='',three=dowAt(c,days[0]).length>=3||(!dowAt(c,days[0]).length&&days.length>9);
+  var p=ym.split('-'),col={},ci=0,lv=null,notice='',three=lpdThree(c,days);
   days.forEach(function(d){var pl=S.plans.get(c.id+'_'+d);(pl.blocks||[]).forEach(function(b){if(b.book&&!(b.book in col))col[b.book]=lpdColor(b)});if(!lv)lv=spcLevel(c,pl);if(!notice&&pl.notice)notice=pl.notice});
   var head='<div class="lpdhd"><span class="lpdlogo l">FRAGE JUNIOR</span><div class="lpdtt"><h1>'+esc(title)+'</h1><p>'+p[0]+' '+LPD_MON[+p[1]-1]+' Session : <span>'+days[0].slice(5).replace('-','/')+' ~ '+days[days.length-1].slice(5).replace('-','/')+'</span></p></div><span class="lpdlogo r">프라게에듀</span></div>';
   var nc=three?3:4,per=three?6:4,LB=three?{hw:'HW',voca:'단어시험준비',spc:'스피킹인증제'}:{hw:'HW',voca:'Voca Test<br>준비',spc:'SPC'};
@@ -4698,8 +4703,9 @@ function lpdOpen(c,ym){
   var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length){toast('이 달 레슨플랜이 없어요');return}
   var title=lpdTitle(c,days),ov=$('prov');if(!ov){ov=document.createElement('div');ov.id='prov';document.body.appendChild(ov)}
   var draw=function(){var pg=lpdPages(c,ym,title);ov.querySelector('.prpages').innerHTML=pg.join('');lpdFit(ov);var m=ov.querySelector('.prbar .muted');if(m)m.textContent=pg.length+'장'};
-  ov.innerHTML='<div class="prbar"><b>레슨플랜 PDF</b><span class="muted"></span><input class="tx" id="lpdT" value="'+esc(title)+'" style="flex:1;min-width:240px;max-width:560px" aria-label="제목"><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">제목은 고칠 수 있어요(반마다 기억해요). PDF로 저장 → 인쇄 창에서 대상을 “PDF로 저장”으로 고르면 돼요. 가로 방향으로 저장돼요.</p></div><div class="prpages lpdpages"></div>';
+  ov.innerHTML='<div class="prbar"><b>레슨플랜 PDF</b><span class="muted"></span><span class="seg" id="lpdN" role="group" aria-label="한 장에 몇 일">'+[[4,'한 장에 4일 (주 2회)'],[6,'한 장에 6일 (주 3회)']].map(function(x){return '<button type="button" class="ghost sm'+((lpdThree(c,days)?6:4)===x[0]?' on':'')+'" data-lpdn="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</span><input class="tx" id="lpdT" value="'+esc(title)+'" style="flex:1;min-width:240px;max-width:560px" aria-label="제목"><button type="button" class="primary" id="prPdf">PDF로 저장</button><button type="button" class="ghost" id="prClose">닫기</button><p class="prhint">제목은 고칠 수 있어요(반마다 기억해요). PDF로 저장 → 인쇄 창에서 대상을 “PDF로 저장”으로 고르면 돼요. 가로 방향으로 저장돼요.</p></div><div class="prpages lpdpages"></div>';
   ov.hidden=false;document.body.classList.add('prmode','lpdmode');draw();ov.scrollTop=0;
+  $('lpdN').addEventListener('click',function(e){var b=e.target.closest('[data-lpdn]');if(!b)return;var all=Object.assign({},S.cfg.lpPdfN||{});all[c.id]=+b.dataset.lpdn;S.cfg.lpPdfN=all;cfgPut();this.querySelectorAll('[data-lpdn]').forEach(function(x){x.classList.toggle('on',x===b)});draw()});
   $('lpdT').addEventListener('change',function(){title=this.value.trim()||lpdTitle(c,days);var all=Object.assign({},S.cfg.lpPdfT||{});all[c.id]=this.value.trim();S.cfg.lpPdfT=all;cfgPut();draw()});
 }
 document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;if(t.closest('#lpPdf')){var c=S.classes.find(function(x){return x.id===S.lpb.cid});if(c)lpdOpen(c,S.lpb.ym);return}if(t.closest('#prClose'))document.body.classList.remove('lpdmode')},true);
