@@ -1338,7 +1338,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-22</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-23</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -1358,6 +1358,28 @@ body.prmode{overflow:hidden}
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* 한셀(Hancom) 등에서 저장해 태그 앞에 x: 가 붙은 엑셀은 SheetJS 가 빈 시트로 읽어요 → 값만 직접 읽어서 채워요 */
+(function(){if(!window.XLSX||XLSX.__hcFix)return;var R=XLSX.read;XLSX.__hcFix=true;
+  XLSX.read=function(data,opts){var wb=R.call(XLSX,data,opts);try{if(wb&&wb.SheetNames&&wb.SheetNames.length&&!wb.SheetNames.some(function(n){return wb.Sheets[n]&&wb.Sheets[n]['!ref']})&&!(opts&&opts.bookSheets)){var f=hcRead(data);if(f)return f}}catch(e){}return wb};
+  function hcRead(data){
+    var u8=data instanceof ArrayBuffer?new Uint8Array(data):data,z=XLSX.CFB.read(u8,{type:'array'}),td=new TextDecoder('utf-8'),dp=new DOMParser();
+    var get=function(p){var f=XLSX.CFB.find(z,p)||XLSX.CFB.find(z,'/'+p);return f&&f.content?td.decode(f.content instanceof Uint8Array?f.content:new Uint8Array(f.content)):''};
+    var X=function(s){return dp.parseFromString(s||'<a/>','application/xml')},all=function(d,t){return Array.prototype.slice.call(d.getElementsByTagNameNS('*',t))};
+    var sst=all(X(get('xl/sharedStrings.xml')),'si').map(function(si){return all(si,'t').map(function(t){return t.textContent}).join('')});
+    var rel={};all(X(get('xl/_rels/workbook.xml.rels')),'Relationship').forEach(function(r){rel[r.getAttribute('Id')]=r.getAttribute('Target')});
+    var out={SheetNames:[],Sheets:{}};
+    all(X(get('xl/workbook.xml')),'sheet').forEach(function(sh){
+      var rid='';for(var i=0;i<sh.attributes.length;i++){var at=sh.attributes[i];if(at.localName==='id')rid=at.value}
+      var tg=String(rel[rid]||'').replace(/^\/?xl\//,''),doc=X(get('xl/'+tg)),aoa=[];
+      all(doc,'c').forEach(function(c){var ref=c.getAttribute('r');if(!ref)return;var a=XLSX.utils.decode_cell(ref),t=c.getAttribute('t'),v=all(c,'v')[0],val='';
+        if(t==='s')val=v?sst[+v.textContent]:'';else if(t==='inlineStr')val=all(c,'t').map(function(x){return x.textContent}).join('');else if(t==='str'||t==='e')val=v?v.textContent:'';else if(t==='b')val=v?v.textContent==='1':'';else if(v){var n=Number(v.textContent);val=isNaN(n)?v.textContent:n}
+        if(val===''||val==null)return;(aoa[a.r]=aoa[a.r]||[])[a.c]=val});
+      for(var r=0;r<aoa.length;r++)if(!aoa[r])aoa[r]=[];
+      var nm=sh.getAttribute('name');out.SheetNames.push(nm);out.Sheets[nm]=XLSX.utils.aoa_to_sheet(aoa)});
+    return out.SheetNames.length?out:null}
+})();
+</script>
 <script>
 (function(){
 'use strict';
@@ -4426,7 +4448,7 @@ function ypGuessCls(s){
   return best;
 }
 function ypParse(wb){
-  var cat=[],vids=[],sheets=[],Y=ypYear(),yg=(wb.SheetNames.join(' ')+' '+(wb.__name||'')).match(/\[(\d{2})\]|20(\d{2})\s*학?년?/);if(yg){var yy=2000+(+(yg[1]||yg[2]));if(yy>=2020&&yy<=2040)Y=yy}
+  var cat=[],vids=[],sheets=[],Y=ypYear(),ttl=wb.SheetNames.map(function(n){var A0=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',range:0})[0]||[];return n+' '+A0.join(' ')}).join(' '),yg=(ttl+' '+(wb.__name||'')).match(/\[(\d{2})\]|\((\d{2})년\)|20(\d{2})\s*학?년/);if(yg){var yy=2000+(+(yg[1]||yg[2]||yg[3]));if(yy>=2020&&yy<=2040)Y=yy}
   wb.SheetNames.forEach(function(sn){
     var A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true});if(!A.length)return;
     var H0=A[0].map(function(v){return String(v).trim().toLowerCase()});
