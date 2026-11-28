@@ -1128,8 +1128,8 @@ h2{font-size:20px}
 /* 레슨플랜 PDF */
 .lppage{width:1123px;height:794px;background:#fff;color:#111;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:26px 30px;box-sizing:border-box;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;page:lpl}
 .lpdhd{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.lpdlogo{font-size:21px;font-weight:800;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
-.lpdtt{text-align:center;flex:1}.lpdtt h1{font-size:25px;margin:0;font-weight:800}.lpdtt p{margin:4px 0 0;font-size:17px;font-weight:700}.lpdtt p span{color:#d6281f}
+.lpdlogo{font-size:17px;font-weight:800;white-space:nowrap}.lpdlogo.l{color:#3a8d2f;letter-spacing:.5px}.lpdlogo.r{color:#24418a}
+.lpdtt{text-align:center;flex:1}.lpdtt{min-width:0}.lpdtt h1{font-size:19px;margin:0;font-weight:800;white-space:nowrap}.lpdtt p{margin:6px 0 0;font-size:20px;font-weight:800}.lpdtt p span{color:#d6281f}
 .lpdt{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;font-size:15px}
 .lpdt th,.lpdt td{border:1px solid #555;padding:var(--lpdp,6px) 6px;text-align:center;vertical-align:middle;line-height:1.35;word-break:keep-all}
 .lpdt .lpdd{font-size:1.28em;font-weight:800}.lpdt .lpdl{font-weight:500;font-size:1em}
@@ -1338,7 +1338,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-12</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-13</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4618,7 +4618,7 @@ function lpdPages(c,ym,title){
   return pages;
 }
 /* 한 장에 다 들어가게: 넘치면 글자를 조금씩 줄여요 (잘리지 않게) */
-function lpdFit(ov){ov.querySelectorAll('.lppage').forEach(function(pg){var t=pg.querySelector('.lpdt');if(!t)return;var fs=15,pd=6;t.style.fontSize='';t.style.removeProperty('--lpdp');
+function lpdFit(ov){ov.querySelectorAll('.lppage h1').forEach(function(t){var f=19;t.style.fontSize='';while(t.scrollWidth>t.clientWidth+1&&f>11){f-=.5;t.style.fontSize=f+'px'}});ov.querySelectorAll('.lppage').forEach(function(pg){var t=pg.querySelector('.lpdt');if(!t)return;var fs=15,pd=6;t.style.fontSize='';t.style.removeProperty('--lpdp');
   while(pg.scrollHeight>pg.clientHeight+1&&fs>6.5){fs-=.5;if(pd>2)pd-=.5;t.style.fontSize=fs+'px';t.style.setProperty('--lpdp',pd+'px')}})}
 function lpdOpen(c,ym){
   var days=lpDays(c,ym).filter(function(d){return S.plans.get(c.id+'_'+d)});if(!days.length){toast('이 달 레슨플랜이 없어요');return}
