@@ -959,7 +959,7 @@ body.prmode{overflow:hidden}
     <button type="button" data-tab="sr" aria-selected="false">학생 기록</button>
     <button type="button" data-tab="dash" aria-selected="false">대시보드</button>
   </nav>
-  <p class="appver" id="appVer">버전 11.28-25</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
+  <p class="appver" id="appVer">버전 11.28-26</p><details class="khint"><summary>⌨ 단축키</summary><p>← → 날짜·주·월 이동<br>T 오늘 · 1~7 탭<br>↑ ↓ 코칭 학생 · ? 도움말<br>/ 학생 찾기 (학생 기록)</p></details>
  </aside>
  <div class="mainc">
   <div class="pghead" id="pghead"><h2 id="pgT"></h2><p id="pgD"></p></div>
@@ -4415,8 +4415,10 @@ var RS_COL={daily:['recs',''],coach:['coach','k'],plans:['plans','p'],tests:['te
 function orphans(){var G={},has={};S.classes.forEach(function(c){has[c.id]=1});
   [['plans','레슨플랜'],['tests','단어시험'],['coach','코칭'],['online','온라인'],['vassign','영상'],['mevc','월간 코멘트'],['yplan','달별 시수']].forEach(function(k){var M=S[k[0]];if(!M||!M.forEach)return;M.forEach(function(d,id){var cid=d&&d.classId;if(!cid||has[cid])return;
     var g=G[cid]||(G[cid]={id:cid,n:{},dates:[],books:{},sids:{}});g.n[k[1]]=(g.n[k[1]]||0)+1;if(d.date)g.dates.push(d.date);(d.blocks||[]).forEach(function(b){if(b.book)g.books[b.book]=1});Object.keys(d.scores||{}).forEach(function(s){g.sids[s]=1})})});
-  return Object.keys(G).map(function(k){var g=G[k];g.dates.sort();return g})}
-function orphHTML(){var L=orphans();if(!L.length)return '';
+  return Object.keys(G).map(function(k){var g=G[k];g.dates.sort();return g}).filter(function(g){return g.n['레슨플랜']||g.n['단어시험']||g.n['코칭']||Object.keys(g.sids).length})}
+/* 반이 없어진 영상 과제 같은 찌꺼기: 조용히 지워요 (학생 기록이 없는 것만) */
+function orphanJunk(){var has={},n=0;S.classes.forEach(function(c){has[c.id]=1});if(!S.vassign||!S.vassign.forEach)return 0;Array.from(S.vassign.entries()).forEach(function(e){var a=e[1];if(!a||!a.classId||has[a.classId])return;var used=Array.from((S.video||new Map()).values()).some(function(v){return v.aid===e[0]});if(used)return;S.vassign.delete(e[0]);write('vassign/'+e[0],null,'a'+e[0]);n++});return n}
+function orphHTML(){try{if(lpAdm())orphanJunk()}catch(_){}var L=orphans();if(!L.length)return '';
   return '<div class="vbox rsbox"><div class="fl" style="margin-top:0">반이 없는 기록 <span class="muted" style="font-weight:400">· 반은 지워졌지만 클라우드에 남아 있는 기록</span></div>'
     +'<p class="hint" style="margin-top:0">반 이름을 적고 <b>반 다시 만들기</b>를 누르면 이 기록들이 다시 보여요. 학생 명단과 날마다 출결 · 숙제는 학원 컴퓨터 store.json으로 아래 <b>되살리기</b>를 하면 원래 학생 그대로 돌아와요. (학생을 손으로 새로 넣지 마세요. 기록이 이어지지 않아요.)</p>'
     +L.map(function(g,i){return '<div class="orow"><div><b>'+Object.keys(g.n).map(function(k){return k+' '+g.n[k]}).join(' · ')+'</b><br><small class="muted">'+(g.dates.length?md(g.dates[0])+' ~ '+md(g.dates[g.dates.length-1])+' · ':'')+'학생 '+Object.keys(g.sids).length+'명 점수 · '+esc(Object.keys(g.books).slice(0,4).join(', '))+'</small></div>'
